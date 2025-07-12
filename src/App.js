@@ -15,11 +15,16 @@ import Sidebar from './components/common/Sidebar';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Dashboard from './pages/Dashboard';
-import DemandeForm from './components/importateur/DemandeForm';
-import MesDemandesList from './components/importateur/MesDemandesList';
-import DemandesAgent from './components/agent/DemandesAgent';
 
-// Superviseur
+// Composants Importateur
+import DemandeFormComplete from './components/importateur/DemandeFormComplete';
+import MesDemandesList from './components/importateur/MesDemandesList';
+
+// Composants Agent
+import DemandesAgent from './components/agent/DemandesAgent';
+import TraiterDemandeComplete from './components/agent/TraiterDemandeComplete';
+
+// Composants Superviseur
 import DashboardSuperviseur from './components/superviseur/DashboardSuperviseur';
 import GestionAgents from './components/superviseur/GestionAgents';
 
@@ -33,6 +38,15 @@ const theme = createTheme({
     secondary: {
       main: '#dc004e',
     },
+    success: {
+      main: '#2e7d32',
+    },
+    warning: {
+      main: '#ed6c02',
+    },
+    error: {
+      main: '#d32f2f',
+    },
   },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
@@ -41,6 +55,34 @@ const theme = createTheme({
     },
     h5: {
       fontWeight: 500,
+    },
+    h6: {
+      fontWeight: 500,
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 500,
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
+      },
     },
   },
 });
@@ -64,7 +106,15 @@ function App() {
                     <Header />
                     <Box sx={{ display: 'flex', flex: 1 }}>
                       <Sidebar />
-                      <Box component="main" sx={{ flexGrow: 1, bgcolor: 'grey.100' }}>
+                      <Box 
+                        component="main" 
+                        sx={{ 
+                          flexGrow: 1, 
+                          bgcolor: 'grey.50',
+                          minHeight: 'calc(100vh - 64px)',
+                          transition: 'margin-left 0.3s ease',
+                        }}
+                      >
                         <Routes>
                           <Route path="/" element={<Navigate to="/dashboard" replace />} />
                           <Route path="/dashboard" element={<Dashboard />} />
@@ -74,7 +124,7 @@ function App() {
                             path="/demande/nouvelle" 
                             element={
                               <ProtectedRoute allowedRoles={[USER_TYPES.IMPORTATEUR]}>
-                                <DemandeForm />
+                                <DemandeFormComplete />
                               </ProtectedRoute>
                             } 
                           />
@@ -93,6 +143,14 @@ function App() {
                             element={
                               <ProtectedRoute allowedRoles={[USER_TYPES.AGENT, USER_TYPES.SUPERVISEUR]}>
                                 <DemandesAgent />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/agent/traiter/:id" 
+                            element={
+                              <ProtectedRoute allowedRoles={[USER_TYPES.AGENT, USER_TYPES.SUPERVISEUR]}>
+                                <TraiterDemandeComplete />
                               </ProtectedRoute>
                             } 
                           />
@@ -135,6 +193,7 @@ function App() {
               pauseOnFocusLoss
               draggable
               pauseOnHover
+              theme="light"
             />
           </div>
         </Router>
