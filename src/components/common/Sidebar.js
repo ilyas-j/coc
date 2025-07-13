@@ -17,6 +17,8 @@ import {
   Assignment,
   SupervisorAccount,
   People,
+  Visibility,
+  Business,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -39,6 +41,7 @@ const Sidebar = () => {
 
     switch (user.typeUser) {
       case USER_TYPES.IMPORTATEUR:
+      case USER_TYPES.EXPORTATEUR:
         return [
           ...commonItems,
           { text: 'Nouvelle Demande', icon: <Add />, path: '/demande/nouvelle' },
@@ -68,8 +71,10 @@ const Sidebar = () => {
 
   const menuItems = getMenuItems();
 
-  const handleNavigation = (path) => {
-    navigate(path);
+  const handleNavigation = (path, disabled) => {
+    if (!disabled) {
+      navigate(path);
+    }
   };
 
   return (
@@ -106,10 +111,18 @@ const Sidebar = () => {
           <ListItem key={item.text} disablePadding>
             <ListItemButton
               selected={location.pathname === item.path}
-              onClick={() => handleNavigation(item.path)}
+              onClick={() => handleNavigation(item.path, item.disabled)}
+              disabled={item.disabled}
+              sx={{
+                opacity: item.disabled ? 0.5 : 1,
+                cursor: item.disabled ? 'not-allowed' : 'pointer',
+              }}
             >
               <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemText 
+                primary={item.text} 
+                secondary={item.disabled ? "Bientôt disponible" : null}
+              />
             </ListItemButton>
           </ListItem>
         ))}

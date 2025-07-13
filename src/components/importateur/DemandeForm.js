@@ -15,94 +15,35 @@ import {
   Card,
   CardContent,
   Divider,
-  FormHelperText,
-  Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Upload as UploadIcon,
-  Description as FileIcon,
-} from '@mui/icons-material';
+import { Add, Delete } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import {
-  CATEGORIES_MARCHANDISE,
-  UNITES_QUANTITE,
-  CATEGORIES_FICHE_TECHNIQUE_OBLIGATOIRE,
-  EXTENSIONS_AUTORISEES,
-  TAILLE_MAX_FICHIER,
-} from '../../utils/constants';
+import { CATEGORIES_MARCHANDISE, UNITES_QUANTITE, USER_TYPES } from '../../utils/constants';
 
-const steps = ['Informations Exportateur', 'Marchandises', 'Documents', 'Récapitulatif'];
+const steps = ['Informations Partenaire', 'Marchandises', 'Documents'];
 
-const DemandeFormComplete = () => {
+const DemandeForm = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const [activeStep, setActiveStep] = useState(0);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  // État du formulaire
+  
+  // Adapter les labels selon le type d'utilisateur
+  const isExportateur = user?.typeUser === USER_TYPES.EXPORTATEUR;
+  const partenaireLabel = isExportateur ? 'Importateur' : 'Exportateur';
+  const stepLabels = [`Informations ${partenaireLabel}`, 'Marchandises', 'Documents'];
+  
   const [formData, setFormData] = useState({
-    // Informations exportateur
-    exportateur: {
-      nom: '',
-      telephone: '',
-      email: '',
-      adresse: '',
-      pays: '',
-      ifu: '',
-    },
-    // Liste des marchandises
-    marchandises: [
-      {
-        id: Date.now(),
-        categorie: '',
-        quantite: '',
-        uniteQuantite: '',
-        valeurDh: '',
-        nomProduit: '',
-        fabricant: '',
-        adresseFabricant: '',
-        paysOrigine: '',
-      }
-    ],
-    // Documents
-    documents: {
-      facture: null,
-      ficheTechnique: null,
-    }
-  });
-
-  const handleExportateurChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      exportateur: {
-        ...prev.exportateur,
-        [field]: value
-      }
-    }));
-    setError('');
-  };
-
-  const handleMarchandiseChange = (id, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      marchandises: prev.marchandises.map(m =>
-        m.id === id ? { ...m, [field]: value } : m
-      )
-    }));
-    setError('');
-  };
-
-  const ajouterMarchandise = () => {
-    const nouvelleMarchandise = {
-      id: Date.now(),
+    // Informations du partenaire (importateur OU exportateur selon qui fait la demande)
+    partenaireNom: '',
+    partenairePays: isExportateur ? 'Maroc' : '', // Si exportateur, le partenaire est au Maroc
+    partenaireEmail: '',
+    partenaireTelephone: '',
+    partenaireAdresse: '',
+    partenaireIfu: '',
+    
+    // Marchandises
+    marchandises: [{
       categorie: '',
       quantite: '',
       uniteQuantite: '',
@@ -111,221 +52,257 @@ const DemandeFormComplete = () => {
       fabricant: '',
       adresseFabricant: '',
       paysOrigine: '',
-    };
+    }]
+  });
+
+  const [errors, setErrors] = useState({});
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      marchandises: [...prev.marchandises, nouvelleMarchandise]
+      [name]: value
     }));
-  };
-
-  const supprimerMarchandise = (id) => {
-    if (formData.marchandises.length > 1) {
-      setFormData(prev => ({
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
         ...prev,
-        marchandises: prev.marchandises.filter(m => m.id !== id)
+        [name]: null
       }));
     }
   };
 
-  const handleFileUpload = (type, event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Validation de l'extension
-    const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-    if (!EXTENSIONS_AUTORISEES.includes(extension)) {
-      setError(`Extension non autorisée. Extensions acceptées: ${EXTENSIONS_AUTORISEES.join(', ')}`);
-      return;
-    }
-
-    // Validation de la taille
-    if (file.size > TAILLE_MAX_FICHIER * 1024 * 1024) {
-      setError(`Fichier trop volumineux. Taille maximum: ${TAILLE_MAX_FICHIER}MB`);
-      return;
-    }
-
+  const handleMarchandiseChange = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
-      documents: {
-        ...prev.documents,
-        [type]: file
-      }
+      marchandises: prev.marchandises.map((item, i) => 
+        i === index ? { ...item, [field]: value } : item
+      )
     }));
-    setError('');
+    
+    // Clear error
+    const errorKey = `marchandises.${index}.${field}`;
+    if (errors[errorKey]) {
+      setErrors(prev => ({
+        ...prev,
+        [errorKey]: null
+      }));
+    }
+  };
+
+  const addMarchandise = () => {
+    setFormData(prev => ({
+      ...prev,
+      marchandises: [...prev.marchandises, {
+        categorie: '',
+        quantite: '',
+        uniteQuantite: '',
+        valeurDh: '',
+        nomProduit: '',
+        fabricant: '',
+        adresseFabricant: '',
+        paysOrigine: '',
+      }]
+    }));
+  };
+
+  const removeMarchandise = (index) => {
+    if (formData.marchandises.length > 1) {
+      setFormData(prev => ({
+        ...prev,
+        marchandises: prev.marchandises.filter((_, i) => i !== index)
+      }));
+    }
   };
 
   const validateStep = (step) => {
-    switch (step) {
-      case 0: // Exportateur
-        const { nom, email, pays } = formData.exportateur;
-        if (!nom || !email || !pays) {
-          setError('Veuillez remplir les champs obligatoires de l\'exportateur (nom, email, pays)');
-          return false;
-        }
-        break;
-      
-      case 1: // Marchandises
-        for (const marchandise of formData.marchandises) {
-          const { categorie, quantite, uniteQuantite, valeurDh, nomProduit, fabricant, paysOrigine } = marchandise;
-          if (!categorie || !quantite || !uniteQuantite || !valeurDh || !nomProduit || !fabricant || !paysOrigine) {
-            setError('Veuillez remplir tous les champs obligatoires pour chaque marchandise');
-            return false;
-          }
-          if (isNaN(quantite) || quantite <= 0) {
-            setError('La quantité doit être un nombre positif');
-            return false;
-          }
-          if (isNaN(valeurDh) || valeurDh <= 0) {
-            setError('La valeur doit être un nombre positif');
-            return false;
-          }
-        }
-        break;
-      
-      case 2: // Documents
-        if (!formData.documents.facture) {
-          setError('La facture est obligatoire');
-          return false;
-        }
-        
-        // Vérifier si fiche technique obligatoire
-        const needsFicheTechnique = formData.marchandises.some(m =>
-          CATEGORIES_FICHE_TECHNIQUE_OBLIGATOIRE.includes(m.categorie)
-        );
-        
-        if (needsFicheTechnique && !formData.documents.ficheTechnique) {
-          setError('La fiche technique est obligatoire pour au moins une de vos marchandises');
-          return false;
-        }
-        break;
-      
-      default:
-        break;
+    const newErrors = {};
+
+    if (step === 0) {
+      // Validation partenaire
+      if (!formData.partenaireNom.trim()) {
+        newErrors.partenaireNom = `Nom/Raison sociale du ${partenaireLabel.toLowerCase()} est obligatoire`;
+      }
+      if (!isExportateur && !formData.partenairePays.trim()) {
+        newErrors.partenairePays = `Pays du ${partenaireLabel.toLowerCase()} est obligatoire`;
+      }
+      if (formData.partenaireEmail && !/\S+@\S+\.\S+/.test(formData.partenaireEmail)) {
+        newErrors.partenaireEmail = 'Format d\'email invalide';
+      }
     }
-    return true;
+
+    if (step === 1) {
+      // Validation marchandises
+      formData.marchandises.forEach((marchandise, index) => {
+        if (!marchandise.categorie) {
+          newErrors[`marchandises.${index}.categorie`] = 'Catégorie obligatoire';
+        }
+        if (!marchandise.quantite || marchandise.quantite <= 0) {
+          newErrors[`marchandises.${index}.quantite`] = 'Quantité obligatoire et positive';
+        }
+        if (!marchandise.uniteQuantite) {
+          newErrors[`marchandises.${index}.uniteQuantite`] = 'Unité obligatoire';
+        }
+        if (!marchandise.valeurDh || marchandise.valeurDh <= 0) {
+          newErrors[`marchandises.${index}.valeurDh`] = 'Valeur obligatoire et positive';
+        }
+        if (!marchandise.nomProduit.trim()) {
+          newErrors[`marchandises.${index}.nomProduit`] = 'Nom du produit obligatoire';
+        }
+        if (!marchandise.fabricant.trim()) {
+          newErrors[`marchandises.${index}.fabricant`] = 'Fabricant obligatoire';
+        }
+        if (!marchandise.adresseFabricant.trim()) {
+          newErrors[`marchandises.${index}.adresseFabricant`] = 'Adresse fabricant obligatoire';
+        }
+        if (!marchandise.paysOrigine.trim()) {
+          newErrors[`marchandises.${index}.paysOrigine`] = 'Pays d\'origine obligatoire';
+        }
+      });
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleNext = () => {
     if (validateStep(activeStep)) {
-      setActiveStep(prev => prev + 1);
+      setActiveStep((prevActiveStep) => prevActiveStep + 1);
     }
   };
 
   const handleBack = () => {
-    setActiveStep(prev => prev - 1);
-    setError('');
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(2)) return;
+    if (!validateStep(1)) return;
 
-    setLoading(true);
     try {
-      // Simuler l'envoi de la demande
+      // Simulation de l'envoi
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      alert('Demande créée avec succès ! Numéro: COC-' + Date.now().toString().slice(-6));
-      navigate('/mes-demandes');
+      setShowSuccess(true);
+      setTimeout(() => {
+        navigate('/mes-demandes');
+      }, 2000);
     } catch (error) {
-      setError('Erreur lors de la création de la demande');
-    } finally {
-      setLoading(false);
+      console.error('Erreur lors de la création:', error);
     }
   };
 
-  const renderExportateurForm = () => (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
+  const renderPartenaireForm = () => (
+    <Card>
+      <CardContent>
         <Typography variant="h6" gutterBottom>
-          Informations sur l'exportateur
+          Informations du {partenaireLabel}
         </Typography>
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Nom/Raison sociale *"
-          value={formData.exportateur.nom}
-          onChange={(e) => handleExportateurChange('nom', e.target.value)}
-          required
-        />
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Pays *"
-          value={formData.exportateur.pays}
-          onChange={(e) => handleExportateurChange('pays', e.target.value)}
-          required
-        />
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Téléphone"
-          value={formData.exportateur.telephone}
-          onChange={(e) => handleExportateurChange('telephone', e.target.value)}
-        />
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Email *"
-          type="email"
-          value={formData.exportateur.email}
-          onChange={(e) => handleExportateurChange('email', e.target.value)}
-          required
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          fullWidth
-          label="Adresse"
-          value={formData.exportateur.adresse}
-          onChange={(e) => handleExportateurChange('adresse', e.target.value)}
-          multiline
-          rows={2}
-        />
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="IFU"
-          value={formData.exportateur.ifu}
-          onChange={(e) => handleExportateurChange('ifu', e.target.value)}
-          helperText="Identifiant Fiscal Unique"
-        />
-      </Grid>
-    </Grid>
+        <Alert severity="info" sx={{ mb: 3 }}>
+          {isExportateur 
+            ? "Renseignez les informations de l'importateur marocain qui recevra vos marchandises."
+            : "Renseignez les informations de l'exportateur qui vous fournit les marchandises."
+          }
+        </Alert>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label={`Nom/Raison sociale du ${partenaireLabel.toLowerCase()} *`}
+              name="partenaireNom"
+              value={formData.partenaireNom}
+              onChange={handleChange}
+              error={!!errors.partenaireNom}
+              helperText={errors.partenaireNom}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label={`Pays du ${partenaireLabel.toLowerCase()} ${isExportateur ? '' : '*'}`}
+              name="partenairePays"
+              value={formData.partenairePays}
+              onChange={handleChange}
+              error={!!errors.partenairePays}
+              helperText={errors.partenairePays}
+              disabled={isExportateur} // Si exportateur, le pays est toujours Maroc
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Téléphone"
+              name="partenaireTelephone"
+              value={formData.partenaireTelephone}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Email"
+              name="partenaireEmail"
+              type="email"
+              value={formData.partenaireEmail}
+              onChange={handleChange}
+              error={!!errors.partenaireEmail}
+              helperText={errors.partenaireEmail}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Adresse"
+              name="partenaireAdresse"
+              value={formData.partenaireAdresse}
+              onChange={handleChange}
+              multiline
+              rows={2}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label={isExportateur ? "ICE (Maroc)" : "IFU"}
+              name="partenaireIfu"
+              value={formData.partenaireIfu}
+              onChange={handleChange}
+              helperText={isExportateur ? "Identifiant Commun de l'Entreprise (Maroc)" : "Identifiant Fiscal Unique"}
+            />
+          </Grid>
+        </Grid>
+      </CardContent>
+    </Card>
   );
 
   const renderMarchandisesForm = () => (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h6">
-          Liste des marchandises ({formData.marchandises.length})
+          Liste des Marchandises ({formData.marchandises.length})
         </Typography>
         <Button
-          variant="outlined"
-          startIcon={<AddIcon />}
-          onClick={ajouterMarchandise}
+          variant="contained"
+          startIcon={<Add />}
+          onClick={addMarchandise}
         >
           Ajouter une marchandise
         </Button>
       </Box>
 
       {formData.marchandises.map((marchandise, index) => (
-        <Card key={marchandise.id} sx={{ mb: 3 }}>
+        <Card key={index} sx={{ mb: 2 }}>
           <CardContent>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
               <Typography variant="subtitle1">
-                Marchandise {index + 1}
+                Marchandise #{index + 1}
               </Typography>
               {formData.marchandises.length > 1 && (
-                <IconButton
-                  color="error"
-                  onClick={() => supprimerMarchandise(marchandise.id)}
+                <IconButton 
+                  color="error" 
+                  onClick={() => removeMarchandise(index)}
+                  size="small"
                 >
-                  <DeleteIcon />
+                  <Delete />
                 </IconButton>
               )}
             </Box>
@@ -337,28 +314,25 @@ const DemandeFormComplete = () => {
                   select
                   label="Catégorie *"
                   value={marchandise.categorie}
-                  onChange={(e) => handleMarchandiseChange(marchandise.id, 'categorie', e.target.value)}
-                  required
+                  onChange={(e) => handleMarchandiseChange(index, 'categorie', e.target.value)}
+                  error={!!errors[`marchandises.${index}.categorie`]}
+                  helperText={errors[`marchandises.${index}.categorie`]}
                 >
                   {CATEGORIES_MARCHANDISE.map((cat) => (
                     <MenuItem key={cat} value={cat}>
-                      {cat}
+                      {cat.replace(/_/g, ' ')}
                     </MenuItem>
                   ))}
                 </TextField>
-                {CATEGORIES_FICHE_TECHNIQUE_OBLIGATOIRE.includes(marchandise.categorie) && (
-                  <FormHelperText>
-                    <Chip size="small" color="warning" label="Fiche technique obligatoire" />
-                  </FormHelperText>
-                )}
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
                   label="Nom du produit *"
                   value={marchandise.nomProduit}
-                  onChange={(e) => handleMarchandiseChange(marchandise.id, 'nomProduit', e.target.value)}
-                  required
+                  onChange={(e) => handleMarchandiseChange(index, 'nomProduit', e.target.value)}
+                  error={!!errors[`marchandises.${index}.nomProduit`]}
+                  helperText={errors[`marchandises.${index}.nomProduit`]}
                 />
               </Grid>
               <Grid item xs={12} md={4}>
@@ -367,8 +341,9 @@ const DemandeFormComplete = () => {
                   label="Quantité *"
                   type="number"
                   value={marchandise.quantite}
-                  onChange={(e) => handleMarchandiseChange(marchandise.id, 'quantite', e.target.value)}
-                  required
+                  onChange={(e) => handleMarchandiseChange(index, 'quantite', e.target.value)}
+                  error={!!errors[`marchandises.${index}.quantite`]}
+                  helperText={errors[`marchandises.${index}.quantite`]}
                 />
               </Grid>
               <Grid item xs={12} md={4}>
@@ -377,8 +352,9 @@ const DemandeFormComplete = () => {
                   select
                   label="Unité *"
                   value={marchandise.uniteQuantite}
-                  onChange={(e) => handleMarchandiseChange(marchandise.id, 'uniteQuantite', e.target.value)}
-                  required
+                  onChange={(e) => handleMarchandiseChange(index, 'uniteQuantite', e.target.value)}
+                  error={!!errors[`marchandises.${index}.uniteQuantite`]}
+                  helperText={errors[`marchandises.${index}.uniteQuantite`]}
                 >
                   {UNITES_QUANTITE.map((unite) => (
                     <MenuItem key={unite} value={unite}>
@@ -390,11 +366,12 @@ const DemandeFormComplete = () => {
               <Grid item xs={12} md={4}>
                 <TextField
                   fullWidth
-                  label="Valeur en DH *"
+                  label="Valeur (DH) *"
                   type="number"
                   value={marchandise.valeurDh}
-                  onChange={(e) => handleMarchandiseChange(marchandise.id, 'valeurDh', e.target.value)}
-                  required
+                  onChange={(e) => handleMarchandiseChange(index, 'valeurDh', e.target.value)}
+                  error={!!errors[`marchandises.${index}.valeurDh`]}
+                  helperText={errors[`marchandises.${index}.valeurDh`]}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
@@ -402,8 +379,9 @@ const DemandeFormComplete = () => {
                   fullWidth
                   label="Fabricant *"
                   value={marchandise.fabricant}
-                  onChange={(e) => handleMarchandiseChange(marchandise.id, 'fabricant', e.target.value)}
-                  required
+                  onChange={(e) => handleMarchandiseChange(index, 'fabricant', e.target.value)}
+                  error={!!errors[`marchandises.${index}.fabricant`]}
+                  helperText={errors[`marchandises.${index}.fabricant`]}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
@@ -411,16 +389,19 @@ const DemandeFormComplete = () => {
                   fullWidth
                   label="Pays d'origine *"
                   value={marchandise.paysOrigine}
-                  onChange={(e) => handleMarchandiseChange(marchandise.id, 'paysOrigine', e.target.value)}
-                  required
+                  onChange={(e) => handleMarchandiseChange(index, 'paysOrigine', e.target.value)}
+                  error={!!errors[`marchandises.${index}.paysOrigine`]}
+                  helperText={errors[`marchandises.${index}.paysOrigine`]}
                 />
               </Grid>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Adresse du fabricant"
+                  label="Adresse du fabricant *"
                   value={marchandise.adresseFabricant}
-                  onChange={(e) => handleMarchandiseChange(marchandise.id, 'adresseFabricant', e.target.value)}
+                  onChange={(e) => handleMarchandiseChange(index, 'adresseFabricant', e.target.value)}
+                  error={!!errors[`marchandises.${index}.adresseFabricant`]}
+                  helperText={errors[`marchandises.${index}.adresseFabricant`]}
                   multiline
                   rows={2}
                 />
@@ -432,271 +413,107 @@ const DemandeFormComplete = () => {
     </Box>
   );
 
-  const renderDocumentsForm = () => {
-    const needsFicheTechnique = formData.marchandises.some(m =>
-      CATEGORIES_FICHE_TECHNIQUE_OBLIGATOIRE.includes(m.categorie)
-    );
-
-    return (
-      <Box>
+  const renderDocumentsForm = () => (
+    <Card>
+      <CardContent>
         <Typography variant="h6" gutterBottom>
-          Documents requis
+          Documents Requis
         </Typography>
+        <Alert severity="info" sx={{ mb: 3 }}>
+          Les documents seront demandés après la validation du formulaire. 
+          La facture est obligatoire pour toutes les demandes.
+          La fiche technique est requise pour certaines catégories de marchandises.
+        </Alert>
         
-        <Grid container spacing={3}>
-          {/* Facture obligatoire */}
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 3, textAlign: 'center', border: '2px dashed #ccc' }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Facture * <Chip size="small" color="error" label="Obligatoire" />
-              </Typography>
-              
-              <input
-                accept={EXTENSIONS_AUTORISEES.join(',')}
-                style={{ display: 'none' }}
-                id="facture-upload"
-                type="file"
-                onChange={(e) => handleFileUpload('facture', e)}
-              />
-              <label htmlFor="facture-upload">
-                <Button
-                  variant="outlined"
-                  component="span"
-                  startIcon={<UploadIcon />}
-                  sx={{ mb: 2 }}
-                >
-                  Choisir un fichier
-                </Button>
-              </label>
-              
-              {formData.documents.facture && (
-                <Box display="flex" alignItems="center" justifyContent="center">
-                  <FileIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="body2">
-                    {formData.documents.facture.name}
-                  </Typography>
-                </Box>
-              )}
-              
-              <Typography variant="caption" display="block" color="text.secondary">
-                Formats acceptés: {EXTENSIONS_AUTORISEES.join(', ')}
-                <br />
-                Taille max: {TAILLE_MAX_FICHIER}MB
-              </Typography>
-            </Paper>
-          </Grid>
-
-          {/* Fiche technique conditionnelle */}
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ 
-              p: 3, 
-              textAlign: 'center', 
-              border: needsFicheTechnique ? '2px dashed #ff9800' : '2px dashed #ccc',
-              bgcolor: needsFicheTechnique ? '#fff3e0' : 'inherit'
-            }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Fiche technique
-                {needsFicheTechnique && (
-                  <Chip size="small" color="warning" label="Obligatoire" sx={{ ml: 1 }} />
-                )}
-              </Typography>
-              
-              <input
-                accept={EXTENSIONS_AUTORISEES.join(',')}
-                style={{ display: 'none' }}
-                id="fiche-technique-upload"
-                type="file"
-                onChange={(e) => handleFileUpload('ficheTechnique', e)}
-              />
-              <label htmlFor="fiche-technique-upload">
-                <Button
-                  variant="outlined"
-                  component="span"
-                  startIcon={<UploadIcon />}
-                  sx={{ mb: 2 }}
-                  color={needsFicheTechnique ? "warning" : "primary"}
-                >
-                  Choisir un fichier
-                </Button>
-              </label>
-              
-              {formData.documents.ficheTechnique && (
-                <Box display="flex" alignItems="center" justifyContent="center">
-                  <FileIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="body2">
-                    {formData.documents.ficheTechnique.name}
-                  </Typography>
-                </Box>
-              )}
-              
-              {needsFicheTechnique && (
-                <Alert severity="warning" sx={{ mt: 2 }}>
-                  Obligatoire pour vos catégories de marchandises
-                </Alert>
-              )}
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box>
-    );
-  };
-
-  const renderRecapitulatif = () => (
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Récapitulatif de la demande
-      </Typography>
-      
-      {/* Informations exportateur */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="subtitle1" gutterBottom>
-          Exportateur
+        <Typography variant="body1" gutterBottom>
+          <strong>Documents obligatoires :</strong>
         </Typography>
-        <Typography><strong>Nom:</strong> {formData.exportateur.nom}</Typography>
-        <Typography><strong>Pays:</strong> {formData.exportateur.pays}</Typography>
-        <Typography><strong>Email:</strong> {formData.exportateur.email}</Typography>
-      </Paper>
+        <ul>
+          <li>Facture (obligatoire)</li>
+          <li>Fiche technique (si requis selon la catégorie)</li>
+        </ul>
 
-      {/* Marchandises */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="subtitle1" gutterBottom>
-          Marchandises ({formData.marchandises.length})
+        <Typography variant="body1" gutterBottom sx={{ mt: 2 }}>
+          <strong>Catégories nécessitant une fiche technique :</strong>
         </Typography>
-        <List dense>
-          {formData.marchandises.map((marchandise, index) => (
-            <ListItem key={marchandise.id}>
-              <ListItemText
-                primary={`${index + 1}. ${marchandise.nomProduit}`}
-                secondary={`${marchandise.categorie} - ${marchandise.quantite} ${marchandise.uniteQuantite} - ${marchandise.valeurDh} DH`}
-              />
-            </ListItem>
-          ))}
-        </List>
-      </Paper>
-
-      {/* Documents */}
-      <Paper sx={{ p: 2 }}>
-        <Typography variant="subtitle1" gutterBottom>
-          Documents
-        </Typography>
-        <List dense>
-          <ListItem>
-            <ListItemText
-              primary="Facture"
-              secondary={formData.documents.facture?.name || 'Non fournie'}
-            />
-            <ListItemSecondaryAction>
-              <Chip
-                size="small"
-                label={formData.documents.facture ? 'OK' : 'Manquant'}
-                color={formData.documents.facture ? 'success' : 'error'}
-              />
-            </ListItemSecondaryAction>
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary="Fiche technique"
-              secondary={formData.documents.ficheTechnique?.name || 'Non fournie'}
-            />
-            <ListItemSecondaryAction>
-              <Chip
-                size="small"
-                label={formData.documents.ficheTechnique ? 'OK' : 'Non fournie'}
-                color={formData.documents.ficheTechnique ? 'success' : 'default'}
-              />
-            </ListItemSecondaryAction>
-          </ListItem>
-        </List>
-      </Paper>
-    </Box>
+        <ul>
+          <li>Produits industriels et techniques</li>
+          <li>Équipements d'éclairage</li>
+          <li>Jouets et articles pour enfants</li>
+          <li>Véhicules et pièces détachées</li>
+          <li>Équipements informatiques et de télécommunication</li>
+        </ul>
+      </CardContent>
+    </Card>
   );
 
   const getStepContent = (step) => {
     switch (step) {
       case 0:
-        return renderExportateurForm();
+        return renderPartenaireForm();
       case 1:
         return renderMarchandisesForm();
       case 2:
         return renderDocumentsForm();
-      case 3:
-        return renderRecapitulatif();
       default:
         return 'Étape inconnue';
     }
   };
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+    <Box sx={{ maxWidth: 1000, mx: 'auto', p: 3 }}>
       <Typography variant="h4" gutterBottom>
         Nouvelle Demande COC
       </Typography>
-      
-      <Typography variant="body2" color="text.secondary" gutterBottom>
-        Importateur: {user?.nom} - {user?.email}
-      </Typography>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
+      {showSuccess && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          Demande créée avec succès ! Redirection en cours...
         </Alert>
       )}
 
       <Paper sx={{ p: 3 }}>
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-          {steps.map((label) => (
+          {stepLabels.map((label) => (
             <Step key={label}>
               <StepLabel>{label}</StepLabel>
             </Step>
           ))}
         </Stepper>
 
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mt: 2, mb: 4 }}>
           {getStepContent(activeStep)}
         </Box>
 
         <Divider sx={{ my: 3 }} />
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
           <Button
+            color="inherit"
             disabled={activeStep === 0}
             onClick={handleBack}
-            variant="outlined"
+            sx={{ mr: 1 }}
           >
             Précédent
           </Button>
-          
-          <Box>
+          <Box sx={{ flex: '1 1 auto' }} />
+          {activeStep === stepLabels.length - 1 ? (
             <Button
-              variant="outlined"
-              onClick={() => navigate('/dashboard')}
-              sx={{ mr: 2 }}
-              disabled={loading}
+              variant="contained"
+              onClick={handleSubmit}
+              disabled={showSuccess}
             >
-              Annuler
+              {showSuccess ? 'Création...' : 'Créer la demande'}
             </Button>
-            
-            {activeStep === steps.length - 1 ? (
-              <Button
-                variant="contained"
-                onClick={handleSubmit}
-                disabled={loading}
-              >
-                {loading ? 'Création...' : 'Créer la demande'}
-              </Button>
-            ) : (
-              <Button
-                variant="contained"
-                onClick={handleNext}
-              >
-                Suivant
-              </Button>
-            )}
-          </Box>
+          ) : (
+            <Button variant="contained" onClick={handleNext}>
+              Suivant
+            </Button>
+          )}
         </Box>
       </Paper>
     </Box>
   );
 };
 
-export default DemandeFormComplete;
+export default DemandeForm;
