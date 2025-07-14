@@ -8,6 +8,7 @@ import {
   CardContent,
   CardActions,
   Button,
+  Alert,
 } from '@mui/material';
 import {
   Assignment,
@@ -16,7 +17,7 @@ import {
   SupervisorAccount,
   People,
   Business,
-  Public,
+  Visibility,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -31,14 +32,15 @@ const Dashboard = () => {
       case USER_TYPES.IMPORTATEUR:
         return [
           {
-            title: 'Nouvelle Demande',
-            description: 'Créer une nouvelle demande de COC',
+            title: 'Nouvelle Demande COC',
+            description: 'Créer une nouvelle demande de Certificat de Conformité',
             icon: <Add fontSize="large" color="primary" />,
             action: () => navigate('/demande/nouvelle'),
+            primary: true,
           },
           {
             title: 'Mes Demandes',
-            description: 'Consulter le statut de mes demandes',
+            description: 'Consulter le statut de toutes mes demandes COC',
             icon: <ListIcon fontSize="large" color="secondary" />,
             action: () => navigate('/mes-demandes'),
           },
@@ -47,44 +49,28 @@ const Dashboard = () => {
       case USER_TYPES.EXPORTATEUR:
         return [
           {
-            title: 'Nouvelle Demande',
-            description: 'Collaborer sur une demande COC',
+            title: 'Nouvelle Demande COC',
+            description: 'Créer une nouvelle demande de Certificat de Conformité',
             icon: <Add fontSize="large" color="primary" />,
-            action: () => navigate('/exportateur/demande/nouvelle'),
+            action: () => navigate('/demande/nouvelle'),
+            primary: true,
           },
           {
             title: 'Mes Demandes',
-            description: 'Suivre mes demandes COC',
+            description: 'Consulter le statut de toutes mes demandes COC',
             icon: <ListIcon fontSize="large" color="secondary" />,
-            action: () => navigate('/exportateur/demandes'),
-          },
-          {
-            title: 'Mes Partenaires',
-            description: 'Gérer mes partenaires importateurs',
-            icon: <Business fontSize="large" color="info" />,
-            action: () => navigate('/exportateur/partenaires'),
+            action: () => navigate('/mes-demandes'),
           },
         ];
       
       case USER_TYPES.AGENT:
         return [
           {
-            title: 'Demandes à Traiter',
-            description: 'Voir les demandes qui me sont affectées',
+            title: 'Mes Demandes à Traiter',
+            description: 'Voir et traiter les demandes qui me sont affectées',
             icon: <Assignment fontSize="large" color="warning" />,
             action: () => navigate('/agent/demandes'),
-          },
-          {
-            title: 'Supervision Bureau',
-            description: 'Vue d\'ensemble du bureau de contrôle',
-            icon: <SupervisorAccount fontSize="large" color="success" />,
-            action: () => navigate('/superviseur/dashboard'),
-          },
-          {
-            title: 'Gestion Agents',
-            description: 'Gérer les agents du bureau',
-            icon: <People fontSize="large" color="info" />,
-            action: () => navigate('/superviseur/agents'),
+            primary: true,
           },
         ];
       
@@ -92,19 +78,20 @@ const Dashboard = () => {
         return [
           {
             title: 'Supervision Bureau',
-            description: 'Vue d\'ensemble de toutes les demandes',
+            description: 'Vue d\'ensemble de toutes les demandes du bureau',
             icon: <SupervisorAccount fontSize="large" color="primary" />,
             action: () => navigate('/superviseur/dashboard'),
+            primary: true,
           },
           {
-            title: 'Gestion Agents',
+            title: 'Gestion des Agents',
             description: 'Gérer les agents et leurs affectations',
             icon: <People fontSize="large" color="secondary" />,
             action: () => navigate('/superviseur/agents'),
           },
           {
-            title: 'Demandes en Cours',
-            description: 'Traiter les demandes personnelles',
+            title: 'Mes Demandes Personnelles',
+            description: 'Traiter mes propres demandes affectées',
             icon: <Assignment fontSize="large" color="warning" />,
             action: () => navigate('/agent/demandes'),
           },
@@ -115,74 +102,62 @@ const Dashboard = () => {
     }
   };
 
-  const getUserTypeDescription = () => {
+  const getRoleDescription = () => {
     switch (user?.typeUser) {
       case USER_TYPES.IMPORTATEUR:
-        return {
-          icon: <Business fontSize="large" color="primary" />,
-          title: 'Espace Importateur',
-          description: 'Gérez vos demandes de Certificat de Conformité pour vos importations au Maroc'
-        };
+        return "En tant qu'importateur, vous pouvez soumettre des demandes de Certificat de Conformité pour vos marchandises et suivre leur progression.";
       case USER_TYPES.EXPORTATEUR:
-        return {
-          icon: <Public fontSize="large" color="secondary" />,
-          title: 'Espace Exportateur',
-          description: 'Collaborez avec vos partenaires importateurs pour obtenir les COC requis'
-        };
+        return "En tant qu'exportateur, vous pouvez soumettre des demandes de Certificat de Conformité pour vos marchandises destinées au marché marocain.";
       case USER_TYPES.AGENT:
-        return {
-          icon: <Assignment fontSize="large" color="warning" />,
-          title: 'Espace Agent',
-          description: 'Contrôlez et validez la conformité des marchandises selon les normes'
-        };
+        return "En tant qu'agent de contrôle, vous traitez les demandes COC qui vous sont affectées et donnez des avis de conformité.";
       case USER_TYPES.SUPERVISEUR:
-        return {
-          icon: <SupervisorAccount fontSize="large" color="success" />,
-          title: 'Espace Superviseur',
-          description: 'Supervisez les activités de votre bureau de contrôle'
-        };
+        return "En tant que superviseur, vous supervisez les activités du bureau de contrôle et gérez l'équipe d'agents.";
       default:
-        return {
-          icon: <Assignment fontSize="large" />,
-          title: 'Tableau de Bord',
-          description: 'Bienvenue sur la plateforme COC'
-        };
+        return "";
+    }
+  };
+
+  const getWelcomeMessage = () => {
+    switch (user?.typeUser) {
+      case USER_TYPES.IMPORTATEUR:
+        return "Espace Importateur";
+      case USER_TYPES.EXPORTATEUR:
+        return "Espace Exportateur";
+      case USER_TYPES.AGENT:
+        return "Espace Agent de Contrôle";
+      case USER_TYPES.SUPERVISEUR:
+        return "Espace Superviseur";
+      default:
+        return "Tableau de Bord";
     }
   };
 
   const quickActions = getQuickActions();
-  const userInfo = getUserTypeDescription();
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
-      {/* En-tête avec informations utilisateur */}
-      <Paper sx={{ p: 3, mb: 4, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          {userInfo.icon}
-          <Box sx={{ ml: 2 }}>
-            <Typography variant="h4" gutterBottom>
-              {userInfo.title}
-            </Typography>
-            <Typography variant="h6" sx={{ opacity: 0.9 }}>
-              Bienvenue, {user?.nom}
-            </Typography>
-          </Box>
-        </Box>
-        <Typography variant="body1" sx={{ opacity: 0.8 }}>
-          {userInfo.description}
-        </Typography>
-      </Paper>
+      <Typography variant="h4" gutterBottom>
+        {getWelcomeMessage()}
+      </Typography>
+      
+      <Typography variant="h6" color="text.secondary" gutterBottom>
+        Bienvenue, {user?.nom}
+      </Typography>
+
+      <Alert severity="info" sx={{ mb: 4 }}>
+        {getRoleDescription()}
+      </Alert>
 
       {/* Actions rapides */}
-      <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+      <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
         Actions Rapides
       </Typography>
       
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={3}>
         {quickActions.map((action, index) => (
           <Grid item xs={12} sm={6} md={4} key={index}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <CardContent sx={{ textAlign: 'center', p: 3, flexGrow: 1 }}>
+            <Card sx={{ height: '100%' }}>
+              <CardContent sx={{ textAlign: 'center', p: 3 }}>
                 <Box sx={{ mb: 2 }}>
                   {action.icon}
                 </Box>
@@ -195,11 +170,12 @@ const Dashboard = () => {
               </CardContent>
               <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
                 <Button
-                  variant="contained"
+                  variant={action.primary ? "contained" : "outlined"}
                   onClick={action.action}
                   size="large"
+                  disabled={action.disabled}
                 >
-                  Accéder
+                  {action.disabled ? "Bientôt disponible" : "Accéder"}
                 </Button>
               </CardActions>
             </Card>
@@ -207,44 +183,150 @@ const Dashboard = () => {
         ))}
       </Grid>
 
-      {/* Informations spécifiques au rôle */}
-      {user?.typeUser === USER_TYPES.EXPORTATEUR && (
-        <Paper sx={{ p: 3, mb: 3, bgcolor: 'secondary.light', color: 'secondary.contrastText' }}>
+      {/* Informations spécifiques selon le rôle */}
+      {user?.typeUser === USER_TYPES.IMPORTATEUR && (
+        <Paper sx={{ p: 3, mt: 4 }}>
           <Typography variant="h6" gutterBottom>
-            🌍 Informations Exportateur
+            Informations Importantes - Importateurs
           </Typography>
-          <Typography variant="body2" paragraph>
-            <strong>Collaboration internationale :</strong> Travaillez avec vos partenaires importateurs au Maroc pour faciliter le processus COC.
-          </Typography>
-          <Typography variant="body2" paragraph>
-            <strong>Gestion des partenaires :</strong> Maintenez une liste de vos importateurs partenaires pour un suivi efficace.
-          </Typography>
-          <Typography variant="body2">
-            <strong>Conformité :</strong> Assurez-vous que vos produits respectent les normes marocaines avant l'export.
-          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Documents requis :</strong> Facture obligatoire, fiche technique selon la catégorie
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Délai de traitement :</strong> Généralement 1-3 jours selon la complexité
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Bureaux de contrôle :</strong> TUV, ECF, AFNOR, ICUM, SGS
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Affectation automatique :</strong> Bureau et agent assignés automatiquement
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Suivi en temps réel :</strong> Notifications à chaque étape
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Support :</strong> support@portnet.ma
+              </Typography>
+            </Grid>
+          </Grid>
         </Paper>
       )}
 
-      {/* Informations système */}
-      <Paper sx={{ p: 3 }}>
+      {user?.typeUser === USER_TYPES.AGENT && (
+        <Paper sx={{ p: 3, mt: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            Guide Agent de Contrôle
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Prise en charge :</strong> Accepter les demandes affectées
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Contrôle :</strong> Vérifier chaque marchandise individuellement
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Avis possibles :</strong> Conforme, Non conforme, Conforme avec réserve
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Décision globale :</strong> Calculée automatiquement
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Finalisation :</strong> Clôturer le dossier après tous les avis
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Support technique :</strong> support-agents@portnet.ma
+              </Typography>
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
+
+      {user?.typeUser === USER_TYPES.SUPERVISEUR && (
+        <Paper sx={{ p: 3, mt: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            Outils Superviseur
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Vue d'ensemble :</strong> Toutes les demandes du bureau
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Réaffectation :</strong> Redistribuer les demandes entre agents
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Gestion équipe :</strong> Disponibilité et congés des agents
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Statistiques :</strong> Performances et délais de traitement
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Double rôle :</strong> Supervision + traitement personnel
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Escalade :</strong> Support direction pour cas complexes
+              </Typography>
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
+
+      {user?.typeUser === USER_TYPES.EXPORTATEUR && (
+        <Paper sx={{ p: 3, mt: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            Informations Exportateurs
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Suivi passif :</strong> Visualisation des demandes COC vous concernant
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Partenariats :</strong> Collaboration avec vos importateurs marocains
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Notifications :</strong> Alertes sur l'évolution des dossiers
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Conformité produits :</strong> Historique des décisions
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Anticipation :</strong> Préparer vos futures exportations
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Support export :</strong> export-support@portnet.ma
+              </Typography>
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
+
+      {/* Informations générales système */}
+      <Paper sx={{ p: 3, mt: 4 }}>
         <Typography variant="h6" gutterBottom>
           Informations Système
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
-            <Typography><strong>Utilisateur:</strong> {user?.nom}</Typography>
-            <Typography><strong>Email:</strong> {user?.email}</Typography>
-            <Typography><strong>Type:</strong> {user?.typeUser}</Typography>
+            <Typography><strong>Utilisateur :</strong> {user?.nom}</Typography>
+            <Typography><strong>Email :</strong> {user?.email}</Typography>
+            <Typography><strong>Type de compte :</strong> {user?.typeUser}</Typography>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Typography><strong>Version:</strong> COC v1.0.0</Typography>
-            <Typography><strong>Support:</strong> support@portnet.ma</Typography>
-            {(user?.typeUser === USER_TYPES.AGENT || user?.typeUser === USER_TYPES.SUPERVISEUR) && (
-              <Typography><strong>Bureau:</strong> TUV Maroc</Typography>
-            )}
-            {user?.typeUser === USER_TYPES.EXPORTATEUR && (
-              <Typography><strong>Pays:</strong> International</Typography>
-            )}
+            <Typography><strong>Version :</strong> COC v1.0.0</Typography>
+            <Typography><strong>Plateforme :</strong> PortNet Maroc</Typography>
+            <Typography><strong>Support général :</strong> support@portnet.ma</Typography>
           </Grid>
         </Grid>
       </Paper>

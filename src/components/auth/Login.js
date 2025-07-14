@@ -1,4 +1,3 @@
-// src/components/auth/Login.js
 import React, { useState } from 'react';
 import {
   Box,
@@ -11,7 +10,6 @@ import {
   InputAdornment,
   IconButton,
   Divider,
-  Grid,
 } from '@mui/material';
 import { Email, Lock, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
@@ -57,7 +55,7 @@ const Login = () => {
   };
 
   return (
-    <Container maxWidth="md">
+    <Container maxWidth="sm">
       <Box
         sx={{
           minHeight: '100vh',
@@ -165,52 +163,42 @@ const Login = () => {
             </Typography>
           </Divider>
 
-          <Grid container spacing={2}>
-            {/* Comptes Importateur */}
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="primary" gutterBottom>
-                🏢 Importateurs
-              </Typography>
-              
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body2" color="text.secondary" textAlign="center" gutterBottom>
+              Utilisez ces comptes pour tester l'application selon les rôles :
+            </Typography>
+            
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
               <Button
                 variant="outlined"
                 size="small"
-                fullWidth
                 onClick={() => handleQuickLogin('importateur@test.ma', 'password')}
                 disabled={isLoading}
-                sx={{ justifyContent: 'flex-start', mb: 1 }}
+                sx={{ justifyContent: 'flex-start' }}
               >
                 <Box sx={{ textAlign: 'left' }}>
                   <Typography variant="caption" display="block">
-                    <strong>Société Import Maroc</strong>
+                    <strong>🏢 Importateur:</strong> importateur@test.ma
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    importateur@test.ma
+                  <Typography variant="caption" display="block" color="text.secondary">
+                    Peut créer et suivre des demandes COC
                   </Typography>
                 </Box>
               </Button>
-            </Grid>
 
-            {/* Comptes Exportateur */}
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="secondary" gutterBottom>
-                🌍 Exportateurs
-              </Typography>
-              
               <Button
                 variant="outlined"
                 size="small"
-                fullWidth
                 onClick={() => handleQuickLogin('exportateur@test.com', 'password')}
                 disabled={isLoading}
-                sx={{ justifyContent: 'flex-start', mb: 1 }}
+                sx={{ justifyContent: 'flex-start' }}
               >
                 <Box sx={{ textAlign: 'left' }}>
                   <Typography variant="caption" display="block">
-                    <strong>Exportateur France</strong>
+                    <strong>🌍 Exportateur:</strong> exportateur@test.com
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    exportateur@test.com
+                  <Typography variant="caption" display="block" color="text.secondary">
+                    Peut consulter les demandes le concernant
                   </Typography>
                 </Box>
               </Button>
@@ -218,76 +206,52 @@ const Login = () => {
               <Button
                 variant="outlined"
                 size="small"
-                fullWidth
-                onClick={() => handleQuickLogin('exportateur2@test.de', 'password')}
-                disabled={isLoading}
-                sx={{ justifyContent: 'flex-start', mb: 1 }}
-              >
-                <Box sx={{ textAlign: 'left' }}>
-                  <Typography variant="caption" display="block">
-                    <strong>Exportateur Allemagne</strong>
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    exportateur2@test.de
-                  </Typography>
-                </Box>
-              </Button>
-            </Grid>
-
-            {/* Comptes Agent */}
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="warning.main" gutterBottom>
-                🔍 Agents
-              </Typography>
-              
-              <Button
-                variant="outlined"
-                size="small"
-                fullWidth
                 onClick={() => handleQuickLogin('agent1@tuv.ma', 'password')}
                 disabled={isLoading}
-                sx={{ justifyContent: 'flex-start', mb: 1 }}
+                sx={{ justifyContent: 'flex-start' }}
               >
                 <Box sx={{ textAlign: 'left' }}>
                   <Typography variant="caption" display="block">
-                    <strong>Agent TUV</strong>
+                    <strong>👨‍🔬 Agent:</strong> agent1@tuv.ma
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    agent1@tuv.ma
+                  <Typography variant="caption" display="block" color="text.secondary">
+                    Peut traiter les demandes qui lui sont affectées
                   </Typography>
                 </Box>
               </Button>
-            </Grid>
 
-            {/* Comptes Superviseur */}
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="success.main" gutterBottom>
-                👨‍💼 Superviseurs
-              </Typography>
-              
               <Button
                 variant="outlined"
                 size="small"
-                fullWidth
                 onClick={() => handleQuickLogin('superviseur@tuv.ma', 'password')}
                 disabled={isLoading}
-                sx={{ justifyContent: 'flex-start', mb: 1 }}
+                sx={{ justifyContent: 'flex-start' }}
               >
                 <Box sx={{ textAlign: 'left' }}>
                   <Typography variant="caption" display="block">
-                    <strong>Superviseur TUV</strong>
+                    <strong>👨‍💼 Superviseur:</strong> superviseur@tuv.ma
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    superviseur@tuv.ma
+                  <Typography variant="caption" display="block" color="text.secondary">
+                    Peut superviser + traiter + gérer les agents
                   </Typography>
                 </Box>
               </Button>
-            </Grid>
-          </Grid>
+            </Box>
 
-          <Typography variant="caption" display="block" textAlign="center" sx={{ mt: 2 }} color="text.secondary">
-            Mot de passe pour tous les comptes : <strong>password</strong>
-          </Typography>
+            <Typography variant="caption" display="block" textAlign="center" sx={{ mt: 2 }} color="text.secondary">
+              Mot de passe pour tous les comptes : <strong>password</strong>
+            </Typography>
+          </Box>
+
+          <Alert severity="info" sx={{ mt: 3 }}>
+            <Typography variant="body2">
+              <strong>Rôles conformes au cahier des charges :</strong>
+              <br />• Importateurs : créent des demandes COC
+              <br />• Exportateurs : consultent (lecture seule)
+              <br />• Agents : traitent les demandes affectées
+              <br />• Superviseurs : supervision + traitement + gestion équipe
+            </Typography>
+          </Alert>
 
           <Box sx={{ mt: 4, textAlign: 'center' }}>
             <Typography variant="caption" color="text.secondary">

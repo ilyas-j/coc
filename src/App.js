@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline, Box } from '@mui/material';
+import { CssBaseline, Box, Typography } from '@mui/material';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -16,21 +16,21 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Dashboard from './pages/Dashboard';
 
-// Composants Importateur
-import DemandeFormComplete from './components/importateur/DemandeForm';
+// Importateur SEULEMENT
+import DemandeForm from './components/importateur/DemandeForm';
 import MesDemandesList from './components/importateur/MesDemandesList';
 
-// Composants Exportateur
-import DemandesExportateur from './components/exportateur/DemandesExportateur';
-import PartenairesExportateur from './components/exportateur/PartenairesExportateur';
-
-// Composants Agent
+// Agent SEULEMENT
 import DemandesAgent from './components/agent/DemandesAgent';
-import TraiterDemandeComplete from './components/agent/TraiterDemande';
 
-// Composants Superviseur
+// Superviseur SEULEMENT (qui peut aussi faire les tâches d'agent)
 import DashboardSuperviseur from './components/superviseur/DashboardSuperviseur';
 import GestionAgents from './components/superviseur/GestionAgents';
+
+// Le DashboardExportateur existant sera utilisé dans le Dashboard principal
+
+// Common
+import ComingSoon from './components/common/ComingSoon';
 
 import { USER_TYPES } from './utils/constants';
 
@@ -42,15 +42,6 @@ const theme = createTheme({
     secondary: {
       main: '#dc004e',
     },
-    success: {
-      main: '#2e7d32',
-    },
-    warning: {
-      main: '#ed6c02',
-    },
-    error: {
-      main: '#d32f2f',
-    },
   },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
@@ -59,34 +50,6 @@ const theme = createTheme({
     },
     h5: {
       fontWeight: 500,
-    },
-    h6: {
-      fontWeight: 500,
-    },
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none',
-          fontWeight: 500,
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-        },
-      },
     },
   },
 });
@@ -110,64 +73,30 @@ function App() {
                     <Header />
                     <Box sx={{ display: 'flex', flex: 1 }}>
                       <Sidebar />
-                      <Box 
-                        component="main" 
-                        sx={{ 
-                          flexGrow: 1, 
-                          bgcolor: 'grey.50',
-                          minHeight: 'calc(100vh - 64px)',
-                          transition: 'margin-left 0.3s ease',
-                        }}
-                      >
+                      <Box component="main" sx={{ flexGrow: 1, bgcolor: 'grey.100' }}>
                         <Routes>
                           <Route path="/" element={<Navigate to="/dashboard" replace />} />
                           <Route path="/dashboard" element={<Dashboard />} />
                           
-                          {/* Routes Importateur */}
+                          {/* Routes IMPORTATEUR ET EXPORTATEUR */}
                           <Route 
                             path="/demande/nouvelle" 
                             element={
-                              <ProtectedRoute allowedRoles={[USER_TYPES.IMPORTATEUR]}>
-                                <DemandeFormComplete />
+                              <ProtectedRoute allowedRoles={[USER_TYPES.IMPORTATEUR, USER_TYPES.EXPORTATEUR]}>
+                                <DemandeForm />
                               </ProtectedRoute>
                             } 
                           />
                           <Route 
                             path="/mes-demandes" 
                             element={
-                              <ProtectedRoute allowedRoles={[USER_TYPES.IMPORTATEUR]}>
+                              <ProtectedRoute allowedRoles={[USER_TYPES.IMPORTATEUR, USER_TYPES.EXPORTATEUR]}>
                                 <MesDemandesList />
                               </ProtectedRoute>
                             } 
                           />
                           
-                          {/* Routes Exportateur */}
-                          <Route 
-                            path="/exportateur/demandes" 
-                            element={
-                              <ProtectedRoute allowedRoles={[USER_TYPES.EXPORTATEUR]}>
-                                <DemandesExportateur />
-                              </ProtectedRoute>
-                            } 
-                          />
-                          <Route 
-                            path="/exportateur/demande/nouvelle" 
-                            element={
-                              <ProtectedRoute allowedRoles={[USER_TYPES.EXPORTATEUR]}>
-                                <DemandeFormComplete />
-                              </ProtectedRoute>
-                            } 
-                          />
-                          <Route 
-                            path="/exportateur/partenaires" 
-                            element={
-                              <ProtectedRoute allowedRoles={[USER_TYPES.EXPORTATEUR]}>
-                                <PartenairesExportateur />
-                              </ProtectedRoute>
-                            } 
-                          />
-                          
-                          {/* Routes Agent */}
+                          {/* Routes AGENT SEULEMENT */}
                           <Route 
                             path="/agent/demandes" 
                             element={
@@ -176,20 +105,12 @@ function App() {
                               </ProtectedRoute>
                             } 
                           />
-                          <Route 
-                            path="/agent/traiter/:id" 
-                            element={
-                              <ProtectedRoute allowedRoles={[USER_TYPES.AGENT, USER_TYPES.SUPERVISEUR]}>
-                                <TraiterDemandeComplete />
-                              </ProtectedRoute>
-                            } 
-                          />
                           
-                          {/* Routes Superviseur */}
+                          {/* Routes SUPERVISEUR SEULEMENT */}
                           <Route 
                             path="/superviseur/dashboard" 
                             element={
-                              <ProtectedRoute allowedRoles={[USER_TYPES.AGENT, USER_TYPES.SUPERVISEUR]}>
+                              <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
                                 <DashboardSuperviseur />
                               </ProtectedRoute>
                             } 
@@ -197,11 +118,13 @@ function App() {
                           <Route 
                             path="/superviseur/agents" 
                             element={
-                              <ProtectedRoute allowedRoles={[USER_TYPES.AGENT, USER_TYPES.SUPERVISEUR]}>
+                              <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
                                 <GestionAgents />
                               </ProtectedRoute>
                             } 
                           />
+                          
+                          {/* Routes Exportateurs gérées dans le Dashboard principal */}
                           
                           {/* Route 404 */}
                           <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -223,7 +146,6 @@ function App() {
               pauseOnFocusLoss
               draggable
               pauseOnHover
-              theme="light"
             />
           </div>
         </Router>

@@ -21,26 +21,34 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { CATEGORIES_MARCHANDISE, UNITES_QUANTITE, USER_TYPES } from '../../utils/constants';
 
-const steps = ['Informations Partenaire', 'Marchandises', 'Documents'];
+const steps = ['Informations Importateur', 'Informations Exportateur', 'Marchandises', 'Documents'];
 
 const DemandeForm = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const [activeStep, setActiveStep] = useState(0);
   
-  // Adapter les labels selon le type d'utilisateur
+  // Vérifier que l'utilisateur est autorisé (Importateur OU Exportateur)
+  const isAuthorized = user?.typeUser === USER_TYPES.IMPORTATEUR || user?.typeUser === USER_TYPES.EXPORTATEUR;
+  const isImportateur = user?.typeUser === USER_TYPES.IMPORTATEUR;
   const isExportateur = user?.typeUser === USER_TYPES.EXPORTATEUR;
-  const partenaireLabel = isExportateur ? 'Importateur' : 'Exportateur';
-  const stepLabels = [`Informations ${partenaireLabel}`, 'Marchandises', 'Documents'];
   
   const [formData, setFormData] = useState({
-    // Informations du partenaire (importateur OU exportateur selon qui fait la demande)
-    partenaireNom: '',
-    partenairePays: isExportateur ? 'Maroc' : '', // Si exportateur, le partenaire est au Maroc
-    partenaireEmail: '',
-    partenaireTelephone: '',
-    partenaireAdresse: '',
-    partenaireIfu: '',
+    // Informations importateur
+    importateurNom: isImportateur ? (user?.nom || '') : '',
+    importateurTelephone: isImportateur ? (user?.telephone || '') : '',
+    importateurEmail: isImportateur ? (user?.email || '') : '',
+    importateurAdresse: '',
+    importateurCodeDouane: '',
+    importateurIce: '',
+    
+    // Informations exportateur
+    exportateurNom: isExportateur ? (user?.nom || '') : '',
+    exportateurTelephone: isExportateur ? (user?.telephone || '') : '',
+    exportateurEmail: isExportateur ? (user?.email || '') : '',
+    exportateurAdresse: '',
+    exportateurPays: isExportateur ? '' : '', // L'exportateur doit renseigner son pays
+    exportateurIfu: '',
     
     // Marchandises
     marchandises: [{
@@ -57,6 +65,20 @@ const DemandeForm = () => {
 
   const [errors, setErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Vérification d'autorisation APRÈS la déclaration des hooks
+  if (!isAuthorized) {
+    return (
+      <Box sx={{ maxWidth: 1000, mx: 'auto', p: 3 }}>
+        <Alert severity="error">
+          Seuls les importateurs et exportateurs peuvent créer des demandes COC.
+        </Alert>
+        <Typography variant="body2" sx={{ mt: 2 }}>
+          Votre rôle actuel : {user?.typeUser}
+        </Typography>
+      </Box>
+    );
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -120,19 +142,31 @@ const DemandeForm = () => {
     const newErrors = {};
 
     if (step === 0) {
-      // Validation partenaire
-      if (!formData.partenaireNom.trim()) {
-        newErrors.partenaireNom = `Nom/Raison sociale du ${partenaireLabel.toLowerCase()} est obligatoire`;
+      // Validation informations importateur
+      if (!formData.importateurNom.trim()) {
+        newErrors.importateurNom = 'Nom/Raison sociale importateur est obligatoire';
       }
-      if (!isExportateur && !formData.partenairePays.trim()) {
-        newErrors.partenairePays = `Pays du ${partenaireLabel.toLowerCase()} est obligatoire`;
-      }
-      if (formData.partenaireEmail && !/\S+@\S+\.\S+/.test(formData.partenaireEmail)) {
-        newErrors.partenaireEmail = 'Format d\'email invalide';
+      if (!formData.importateurEmail) {
+        newErrors.importateurEmail = 'Email importateur est obligatoire';
+      } else if (!/\S+@\S+\.\S+/.test(formData.importateurEmail)) {
+        newErrors.importateurEmail = 'Format d\'email invalide';
       }
     }
 
     if (step === 1) {
+      // Validation informations exportateur
+      if (!formData.exportateurNom.trim()) {
+        newErrors.exportateurNom = 'Nom/Raison sociale exportateur est obligatoire';
+      }
+      if (!formData.exportateurPays.trim()) {
+        newErrors.exportateurPays = 'Pays exportateur est obligatoire';
+      }
+      if (formData.exportateurEmail && !/\S+@\S+\.\S+/.test(formData.exportateurEmail)) {
+        newErrors.exportateurEmail = 'Format d\'email invalide';
+      }
+    }
+
+    if (step === 2) {
       // Validation marchandises
       formData.marchandises.forEach((marchandise, index) => {
         if (!marchandise.categorie) {
@@ -177,7 +211,7 @@ const DemandeForm = () => {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(1)) return;
+    if (!validateStep(2)) return;
 
     try {
       // Simulation de l'envoi
@@ -191,48 +225,130 @@ const DemandeForm = () => {
     }
   };
 
-  const renderPartenaireForm = () => (
+  const renderImportateurForm = () => (
     <Card>
       <CardContent>
         <Typography variant="h6" gutterBottom>
-          Informations du {partenaireLabel}
+          Informations Importateur
         </Typography>
-        <Alert severity="info" sx={{ mb: 3 }}>
-          {isExportateur 
-            ? "Renseignez les informations de l'importateur marocain qui recevra vos marchandises."
-            : "Renseignez les informations de l'exportateur qui vous fournit les marchandises."
+        <Alert severity={isImportateur ? "success" : "info"} sx={{ mb: 3 }}>
+          {isImportateur 
+            ? "Vos informations d'importateur (vous pouvez les modifier/compléter)" 
+            : "Renseignez les informations de l'importateur destinataire"
           }
         </Alert>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label={`Nom/Raison sociale du ${partenaireLabel.toLowerCase()} *`}
-              name="partenaireNom"
-              value={formData.partenaireNom}
+              label="Nom/Raison sociale *"
+              name="importateurNom"
+              value={formData.importateurNom}
               onChange={handleChange}
-              error={!!errors.partenaireNom}
-              helperText={errors.partenaireNom}
-            />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label={`Pays du ${partenaireLabel.toLowerCase()} ${isExportateur ? '' : '*'}`}
-              name="partenairePays"
-              value={formData.partenairePays}
-              onChange={handleChange}
-              error={!!errors.partenairePays}
-              helperText={errors.partenairePays}
-              disabled={isExportateur} // Si exportateur, le pays est toujours Maroc
+              error={!!errors.importateurNom}
+              helperText={errors.importateurNom}
+              disabled={isImportateur && !!user?.nom} // Pré-rempli pour l'importateur
             />
           </Grid>
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               label="Téléphone"
-              name="partenaireTelephone"
-              value={formData.partenaireTelephone}
+              name="importateurTelephone"
+              value={formData.importateurTelephone}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Email *"
+              name="importateurEmail"
+              type="email"
+              value={formData.importateurEmail}
+              onChange={handleChange}
+              error={!!errors.importateurEmail}
+              helperText={errors.importateurEmail}
+              disabled={isImportateur && !!user?.email} // Pré-rempli pour l'importateur
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Code douane"
+              name="importateurCodeDouane"
+              value={formData.importateurCodeDouane}
+              onChange={handleChange}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="ICE"
+              name="importateurIce"
+              value={formData.importateurIce}
+              onChange={handleChange}
+              helperText="Identifiant Commun de l'Entreprise (Maroc)"
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Adresse"
+              name="importateurAdresse"
+              value={formData.importateurAdresse}
+              onChange={handleChange}
+              multiline
+              rows={2}
+            />
+          </Grid>
+        </Grid>
+      </CardContent>
+    </Card>
+  );
+
+  const renderExportateurForm = () => (
+    <Card>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          Informations Exportateur
+        </Typography>
+        <Alert severity={isExportateur ? "success" : "info"} sx={{ mb: 3 }}>
+          {isExportateur 
+            ? "Vos informations d'exportateur (vous pouvez les modifier/compléter)" 
+            : "Renseignez les informations de l'exportateur fournisseur"
+          }
+        </Alert>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Nom/Raison sociale *"
+              name="exportateurNom"
+              value={formData.exportateurNom}
+              onChange={handleChange}
+              error={!!errors.exportateurNom}
+              helperText={errors.exportateurNom}
+              disabled={isExportateur && !!user?.nom} // Pré-rempli pour l'exportateur
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Pays *"
+              name="exportateurPays"
+              value={formData.exportateurPays}
+              onChange={handleChange}
+              error={!!errors.exportateurPays}
+              helperText={errors.exportateurPays}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Téléphone"
+              name="exportateurTelephone"
+              value={formData.exportateurTelephone}
               onChange={handleChange}
             />
           </Grid>
@@ -240,20 +356,21 @@ const DemandeForm = () => {
             <TextField
               fullWidth
               label="Email"
-              name="partenaireEmail"
+              name="exportateurEmail"
               type="email"
-              value={formData.partenaireEmail}
+              value={formData.exportateurEmail}
               onChange={handleChange}
-              error={!!errors.partenaireEmail}
-              helperText={errors.partenaireEmail}
+              error={!!errors.exportateurEmail}
+              helperText={errors.exportateurEmail}
+              disabled={isExportateur && !!user?.email} // Pré-rempli pour l'exportateur
             />
           </Grid>
           <Grid item xs={12}>
             <TextField
               fullWidth
               label="Adresse"
-              name="partenaireAdresse"
-              value={formData.partenaireAdresse}
+              name="exportateurAdresse"
+              value={formData.exportateurAdresse}
               onChange={handleChange}
               multiline
               rows={2}
@@ -262,11 +379,11 @@ const DemandeForm = () => {
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label={isExportateur ? "ICE (Maroc)" : "IFU"}
-              name="partenaireIfu"
-              value={formData.partenaireIfu}
+              label="IFU"
+              name="exportateurIfu"
+              value={formData.exportateurIfu}
               onChange={handleChange}
-              helperText={isExportateur ? "Identifiant Commun de l'Entreprise (Maroc)" : "Identifiant Fiscal Unique"}
+              helperText="Identifiant Fiscal Unique"
             />
           </Grid>
         </Grid>
@@ -320,7 +437,7 @@ const DemandeForm = () => {
                 >
                   {CATEGORIES_MARCHANDISE.map((cat) => (
                     <MenuItem key={cat} value={cat}>
-                      {cat.replace(/_/g, ' ')}
+                      {cat}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -450,10 +567,12 @@ const DemandeForm = () => {
   const getStepContent = (step) => {
     switch (step) {
       case 0:
-        return renderPartenaireForm();
+        return renderImportateurForm();
       case 1:
-        return renderMarchandisesForm();
+        return renderExportateurForm();
       case 2:
+        return renderMarchandisesForm();
+      case 3:
         return renderDocumentsForm();
       default:
         return 'Étape inconnue';
@@ -465,6 +584,11 @@ const DemandeForm = () => {
       <Typography variant="h4" gutterBottom>
         Nouvelle Demande COC
       </Typography>
+      
+      <Alert severity="info" sx={{ mb: 3 }}>
+        {isImportateur && "En tant qu'importateur, vous créez une demande COC pour des marchandises que vous voulez importer."}
+        {isExportateur && "En tant qu'exportateur, vous créez une demande COC pour des marchandises que vous voulez exporter vers le Maroc."}
+      </Alert>
 
       {showSuccess && (
         <Alert severity="success" sx={{ mb: 3 }}>
@@ -474,7 +598,7 @@ const DemandeForm = () => {
 
       <Paper sx={{ p: 3 }}>
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-          {stepLabels.map((label) => (
+          {steps.map((label) => (
             <Step key={label}>
               <StepLabel>{label}</StepLabel>
             </Step>
@@ -497,7 +621,7 @@ const DemandeForm = () => {
             Précédent
           </Button>
           <Box sx={{ flex: '1 1 auto' }} />
-          {activeStep === stepLabels.length - 1 ? (
+          {activeStep === steps.length - 1 ? (
             <Button
               variant="contained"
               onClick={handleSubmit}
