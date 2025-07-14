@@ -1,3 +1,4 @@
+// src/services/authService.js
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/constants';
 
@@ -58,6 +59,28 @@ export const authService = {
         localStorage.setItem('token', userData.token);
         localStorage.setItem('user', JSON.stringify(userData));
         return userData;
+      } else if (credentials.email === 'exportateur@test.com' && credentials.password === 'password') {
+        const userData = {
+          id: 4,
+          email: 'exportateur@test.com',
+          nom: 'Exportateur France',
+          typeUser: 'EXPORTATEUR',
+          token: 'fake-jwt-token'
+        };
+        localStorage.setItem('token', userData.token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        return userData;
+      } else if (credentials.email === 'exportateur2@test.de' && credentials.password === 'password') {
+        const userData = {
+          id: 5,
+          email: 'exportateur2@test.de',
+          nom: 'Exportateur Allemagne',
+          typeUser: 'EXPORTATEUR',
+          token: 'fake-jwt-token'
+        };
+        localStorage.setItem('token', userData.token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        return userData;
       } else if (credentials.email === 'agent1@tuv.ma' && credentials.password === 'password') {
         const userData = {
           id: 2,
@@ -75,17 +98,6 @@ export const authService = {
           email: 'superviseur@tuv.ma',
           nom: 'Superviseur TUV',
           typeUser: 'SUPERVISEUR',
-          token: 'fake-jwt-token'
-        };
-        localStorage.setItem('token', userData.token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return userData;
-      } else if (credentials.email === 'exportateur@test.com' && credentials.password === 'password') {
-        const userData = {
-          id: 4,
-          email: 'exportateur@test.com',
-          nom: 'Exportateur France',
-          typeUser: 'EXPORTATEUR',
           token: 'fake-jwt-token'
         };
         localStorage.setItem('token', userData.token);
@@ -136,7 +148,8 @@ export const registerService = {
             'importateur@test.ma',
             'agent1@tuv.ma', 
             'superviseur@tuv.ma',
-            'exportateur@test.com'
+            'exportateur@test.com',
+            'exportateur2@test.de'
           ];
           
           if (existingEmails.includes(userData.email)) {
@@ -166,6 +179,34 @@ export const registerService = {
         { id: 3, nom: 'AFNOR' },
         { id: 4, nom: 'ICUM' },
         { id: 5, nom: 'SGS' },
+      ];
+    }
+  },
+
+  getPays: async () => {
+    try {
+      const response = await api.get('/auth/pays');
+      return response.data;
+    } catch (error) {
+      console.error('Erreur pays:', error);
+      // Fallback avec données statiques pour exportateurs
+      return [
+        'France',
+        'Allemagne', 
+        'Italie',
+        'Espagne',
+        'Royaume-Uni',
+        'Belgique',
+        'Pays-Bas',
+        'Suisse',
+        'Portugal',
+        'Turquie',
+        'Chine',
+        'Inde',
+        'États-Unis',
+        'Canada',
+        'Brésil',
+        'Autre'
       ];
     }
   }

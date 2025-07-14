@@ -11,6 +11,7 @@ import {
   InputAdornment,
   IconButton,
   Divider,
+  Grid,
 } from '@mui/material';
 import { Email, Lock, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
@@ -56,7 +57,7 @@ const Login = () => {
   };
 
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth="md">
       <Box
         sx={{
           minHeight: '100vh',
@@ -164,36 +165,52 @@ const Login = () => {
             </Typography>
           </Divider>
 
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" color="text.secondary" textAlign="center" gutterBottom>
-              Utilisez ces comptes pour tester l'application :
-            </Typography>
-            
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
+          <Grid container spacing={2}>
+            {/* Comptes Importateur */}
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" color="primary" gutterBottom>
+                🏢 Importateurs
+              </Typography>
+              
               <Button
                 variant="outlined"
                 size="small"
+                fullWidth
                 onClick={() => handleQuickLogin('importateur@test.ma', 'password')}
                 disabled={isLoading}
-                sx={{ justifyContent: 'flex-start' }}
+                sx={{ justifyContent: 'flex-start', mb: 1 }}
               >
                 <Box sx={{ textAlign: 'left' }}>
                   <Typography variant="caption" display="block">
-                    <strong>Importateur:</strong> importateur@test.ma
+                    <strong>Société Import Maroc</strong>
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    importateur@test.ma
                   </Typography>
                 </Box>
               </Button>
+            </Grid>
 
+            {/* Comptes Exportateur */}
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" color="secondary" gutterBottom>
+                🌍 Exportateurs
+              </Typography>
+              
               <Button
                 variant="outlined"
                 size="small"
+                fullWidth
                 onClick={() => handleQuickLogin('exportateur@test.com', 'password')}
                 disabled={isLoading}
-                sx={{ justifyContent: 'flex-start' }}
+                sx={{ justifyContent: 'flex-start', mb: 1 }}
               >
                 <Box sx={{ textAlign: 'left' }}>
                   <Typography variant="caption" display="block">
-                    <strong>Exportateur:</strong> exportateur@test.com
+                    <strong>Exportateur France</strong>
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    exportateur@test.com
                   </Typography>
                 </Box>
               </Button>
@@ -201,36 +218,76 @@ const Login = () => {
               <Button
                 variant="outlined"
                 size="small"
+                fullWidth
+                onClick={() => handleQuickLogin('exportateur2@test.de', 'password')}
+                disabled={isLoading}
+                sx={{ justifyContent: 'flex-start', mb: 1 }}
+              >
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography variant="caption" display="block">
+                    <strong>Exportateur Allemagne</strong>
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    exportateur2@test.de
+                  </Typography>
+                </Box>
+              </Button>
+            </Grid>
+
+            {/* Comptes Agent */}
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" color="warning.main" gutterBottom>
+                🔍 Agents
+              </Typography>
+              
+              <Button
+                variant="outlined"
+                size="small"
+                fullWidth
                 onClick={() => handleQuickLogin('agent1@tuv.ma', 'password')}
                 disabled={isLoading}
-                sx={{ justifyContent: 'flex-start' }}
+                sx={{ justifyContent: 'flex-start', mb: 1 }}
               >
                 <Box sx={{ textAlign: 'left' }}>
                   <Typography variant="caption" display="block">
-                    <strong>Agent:</strong> agent1@tuv.ma
+                    <strong>Agent TUV</strong>
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    agent1@tuv.ma
                   </Typography>
                 </Box>
               </Button>
+            </Grid>
 
+            {/* Comptes Superviseur */}
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" color="success.main" gutterBottom>
+                👨‍💼 Superviseurs
+              </Typography>
+              
               <Button
                 variant="outlined"
                 size="small"
+                fullWidth
                 onClick={() => handleQuickLogin('superviseur@tuv.ma', 'password')}
                 disabled={isLoading}
-                sx={{ justifyContent: 'flex-start' }}
+                sx={{ justifyContent: 'flex-start', mb: 1 }}
               >
                 <Box sx={{ textAlign: 'left' }}>
                   <Typography variant="caption" display="block">
-                    <strong>Superviseur:</strong> superviseur@tuv.ma
+                    <strong>Superviseur TUV</strong>
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    superviseur@tuv.ma
                   </Typography>
                 </Box>
               </Button>
-            </Box>
+            </Grid>
+          </Grid>
 
-            <Typography variant="caption" display="block" textAlign="center" sx={{ mt: 2 }} color="text.secondary">
-              Mot de passe pour tous les comptes : <strong>password</strong>
-            </Typography>
-          </Box>
+          <Typography variant="caption" display="block" textAlign="center" sx={{ mt: 2 }} color="text.secondary">
+            Mot de passe pour tous les comptes : <strong>password</strong>
+          </Typography>
 
           <Box sx={{ mt: 4, textAlign: 'center' }}>
             <Typography variant="caption" color="text.secondary">

@@ -9,28 +9,29 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Button,
   Chip,
+  Button,
+  IconButton,
   Alert,
   CircularProgress,
 } from '@mui/material';
-import { PlayArrow, Visibility, Assignment } from '@mui/icons-material';
+import { Visibility, Refresh, Add } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_DEMANDE } from '../../utils/constants';
 
-const DemandesAgent = () => {
+const DemandesExportateur = () => {
   const navigate = useNavigate();
   const [demandes, setDemandes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Simulation de chargement des demandes affectées à l'agent
+  // Simulation de chargement des demandes pour l'exportateur
   useEffect(() => {
     const fetchDemandes = async () => {
       try {
         setLoading(true);
         
-        // Simulation API call - remplacer par vraie API
+        // Simulation API call - adapter selon votre backend
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         const demandesSimulees = [
@@ -38,47 +39,39 @@ const DemandesAgent = () => {
             id: 1,
             numeroDemande: 'COC-2024-123456',
             dateCreation: '2024-12-15T10:30:00Z',
-            dateAffectation: '2024-12-15T10:31:00Z',
             importateurNom: 'Société Import Maroc',
-            exportateurNom: 'Société Export France',
             status: STATUS_DEMANDE.DEPOSE,
+            bureauControle: 'TUV',
             marchandises: [
               { nomProduit: 'Lampe LED', categorie: 'Équipements d\'éclairage' },
               { nomProduit: 'Jouet Robot', categorie: 'Jouets et articles pour enfants' }
             ],
-            delaiEstime: '2 jour(s)'
+            decisionGlobale: null,
           },
           {
             id: 2,
             numeroDemande: 'COC-2024-123457',
             dateCreation: '2024-12-14T14:20:00Z',
-            dateAffectation: '2024-12-14T14:21:00Z',
-            dateTraitement: '2024-12-14T15:00:00Z',
             importateurNom: 'Global Import SARL',
-            exportateurNom: 'International Export Ltd',
             status: STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT,
+            bureauControle: 'ECF',
             marchandises: [
-              { nomProduit: 'T-shirts coton bio', categorie: 'Textile et habillement' },
-              { nomProduit: 'Colorant textile', categorie: 'Produits chimiques' }
+              { nomProduit: 'T-shirts coton bio', categorie: 'Textile et habillement' }
             ],
-            delaiEstime: '3 jour(s)'
+            decisionGlobale: null,
           },
           {
             id: 3,
             numeroDemande: 'COC-2024-123455',
             dateCreation: '2024-12-13T09:15:00Z',
-            dateAffectation: '2024-12-13T09:16:00Z',
-            dateTraitement: '2024-12-13T10:00:00Z',
-            dateCloture: '2024-12-13T16:30:00Z',
             importateurNom: 'Commerce International',
-            exportateurNom: 'European Export',
             status: STATUS_DEMANDE.CLOTURE,
-            decisionGlobale: 'CONFORME',
+            bureauControle: 'SGS',
             marchandises: [
               { nomProduit: 'Équipement médical', categorie: 'Produits pharmaceutiques et cosmétiques' }
             ],
-            delaiEstime: '1 jour(s)'
-          }
+            decisionGlobale: 'CONFORME',
+          },
         ];
         
         setDemandes(demandesSimulees);
@@ -93,41 +86,6 @@ const DemandesAgent = () => {
 
     fetchDemandes();
   }, []);
-
-  const handlePrendreEnCharge = async (demandeId) => {
-    try {
-      setLoading(true);
-      
-      // Simulation API call pour prise en charge
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mettre à jour le statut localement
-      setDemandes(prevDemandes => 
-        prevDemandes.map(demande => 
-          demande.id === demandeId 
-            ? { 
-                ...demande, 
-                status: STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT,
-                dateTraitement: new Date().toISOString()
-              }
-            : demande
-        )
-      );
-      
-      alert('Demande prise en charge avec succès !');
-    } catch (error) {
-      alert('Erreur lors de la prise en charge');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVoirDetails = (demande) => {
-    // Naviguer vers la page de traitement avec les données de la demande
-    navigate(`/agent/traiter/${demande.id}`, { 
-      state: { demande } 
-    });
-  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -155,14 +113,16 @@ const DemandesAgent = () => {
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
+  const handleVoirDetails = (demandeId) => {
+    navigate(`/exportateur/demande/${demandeId}`);
+  };
+
+  const handleNouvelleDemande = () => {
+    navigate('/exportateur/demande/nouvelle');
   };
 
   if (loading) {
@@ -177,14 +137,33 @@ const DemandesAgent = () => {
   }
 
   return (
-    <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Mes Demandes Affectées
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" gutterBottom>
-        Demandes COC qui vous sont affectées automatiquement selon votre disponibilité et charge de travail
-      </Typography>
+    <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Box>
+          <Typography variant="h4">
+            Mes Demandes COC
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            En tant qu'exportateur, consultez le statut de vos demandes COC
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={handleNouvelleDemande}
+          >
+            Nouvelle Demande
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={handleRefresh}
+          >
+            Actualiser
+          </Button>
+        </Box>
+      </Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -195,13 +174,12 @@ const DemandesAgent = () => {
       {/* Statistiques rapides */}
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
         <Chip 
-          icon={<Assignment />}
           label={`${demandes.length} demandes au total`}
           color="primary"
           variant="outlined"
         />
         <Chip 
-          label={`${demandes.filter(d => d.status === STATUS_DEMANDE.DEPOSE).length} à prendre en charge`}
+          label={`${demandes.filter(d => d.status === STATUS_DEMANDE.DEPOSE).length} en attente`}
           color="info"
           variant="outlined"
         />
@@ -222,12 +200,12 @@ const DemandesAgent = () => {
           <TableHead>
             <TableRow>
               <TableCell>Numéro</TableCell>
-              <TableCell>Date création</TableCell>
+              <TableCell>Date de création</TableCell>
               <TableCell>Importateur</TableCell>
-              <TableCell>Exportateur</TableCell>
+              <TableCell>Bureau de contrôle</TableCell>
               <TableCell>Marchandises</TableCell>
               <TableCell>Statut</TableCell>
-              <TableCell>Délai estimé</TableCell>
+              <TableCell>Décision</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -238,15 +216,12 @@ const DemandesAgent = () => {
                   <Typography variant="subtitle2" fontWeight="bold">
                     {demande.numeroDemande}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Affectée le {formatDate(demande.dateAffectation)}
-                  </Typography>
                 </TableCell>
                 <TableCell>
-                  {formatDate(demande.dateCreation)}
+                  {new Date(demande.dateCreation).toLocaleDateString('fr-FR')}
                 </TableCell>
                 <TableCell>{demande.importateurNom}</TableCell>
-                <TableCell>{demande.exportateurNom}</TableCell>
+                <TableCell>{demande.bureauControle || 'En attente'}</TableCell>
                 <TableCell>
                   <Box>
                     <Chip
@@ -275,52 +250,28 @@ const DemandesAgent = () => {
                     color={getStatusColor(demande.status)}
                     size="small"
                   />
-                  {demande.decisionGlobale && (
-                    <Box sx={{ mt: 1 }}>
-                      <Chip
-                        label={demande.decisionGlobale}
-                        color={demande.decisionGlobale === 'CONFORME' ? 'success' : 'error'}
-                        size="small"
-                        variant="outlined"
-                      />
-                    </Box>
-                  )}
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2">
-                    {demande.delaiEstime}
-                  </Typography>
-                  {demande.dateTraitement && (
-                    <Typography variant="caption" color="text.secondary">
-                      Démarrée le {formatDate(demande.dateTraitement)}
+                  {demande.decisionGlobale ? (
+                    <Chip
+                      label={demande.decisionGlobale}
+                      color={demande.decisionGlobale === 'CONFORME' ? 'success' : 'error'}
+                      size="small"
+                    />
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      En attente
                     </Typography>
                   )}
                 </TableCell>
                 <TableCell>
-                  <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
-                    {demande.status === STATUS_DEMANDE.DEPOSE && (
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<PlayArrow />}
-                        onClick={() => handlePrendreEnCharge(demande.id)}
-                        disabled={loading}
-                      >
-                        Prendre en charge
-                      </Button>
-                    )}
-                    
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<Visibility />}
-                      onClick={() => handleVoirDetails(demande)}
-                    >
-                      {demande.status === STATUS_DEMANDE.DEPOSE ? 'Voir détails' : 
-                       demande.status === STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT ? 'Traiter' : 
-                       'Voir résultat'}
-                    </Button>
-                  </Box>
+                  <IconButton 
+                    size="small" 
+                    color="primary"
+                    onClick={() => handleVoirDetails(demande.id)}
+                  >
+                    <Visibility />
+                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
@@ -328,13 +279,19 @@ const DemandesAgent = () => {
               <TableRow>
                 <TableCell colSpan={8} align="center">
                   <Box sx={{ py: 4 }}>
-                    <Assignment sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-                    <Typography variant="h6" color="text.secondary">
-                      Aucune demande affectée
+                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                      Aucune demande trouvée
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Les demandes vous seront affectées automatiquement selon votre disponibilité
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      Vous n'avez pas encore soumis de demande COC
                     </Typography>
+                    <Button
+                      variant="contained"
+                      startIcon={<Add />}
+                      onClick={handleNouvelleDemande}
+                    >
+                      Créer ma première demande
+                    </Button>
                   </Box>
                 </TableCell>
               </TableRow>
@@ -343,26 +300,26 @@ const DemandesAgent = () => {
         </Table>
       </TableContainer>
 
-      {/* Informations sur le processus */}
+      {/* Informations pour l'exportateur */}
       <Paper sx={{ p: 3, mt: 3, bgcolor: 'background.default' }}>
         <Typography variant="h6" gutterBottom>
-          📋 Processus de traitement
+          📋 Processus COC pour Exportateurs
         </Typography>
         <Typography variant="body2" paragraph>
-          <strong>1. Affectation automatique :</strong> Les demandes vous sont affectées selon un algorithme qui prend en compte votre disponibilité, vos congés et votre charge de travail actuelle.
+          <strong>1. Soumission :</strong> Vous pouvez soumettre une demande COC en collaboration avec votre importateur au Maroc.
         </Typography>
         <Typography variant="body2" paragraph>
-          <strong>2. Prise en charge :</strong> Cliquez sur "Prendre en charge" pour démarrer le traitement d'une demande (statut passe de "Déposée" à "En cours").
+          <strong>2. Traitement :</strong> La demande sera automatiquement affectée à un bureau de contrôle (TUV, ECF, AFNOR, ICUM, SGS).
         </Typography>
         <Typography variant="body2" paragraph>
-          <strong>3. Traitement :</strong> Donnez un avis de conformité pour chaque marchandise : Conforme, Non conforme, ou Conforme avec réserve.
+          <strong>3. Contrôle :</strong> Un agent contrôlera la conformité de vos produits selon les normes marocaines.
         </Typography>
         <Typography variant="body2">
-          <strong>4. Finalisation :</strong> Une fois tous les avis donnés, la décision globale est calculée automatiquement et le dossier est clôturé.
+          <strong>4. Résultat :</strong> Vous recevrez le certificat de conformité une fois le contrôle terminé.
         </Typography>
       </Paper>
     </Box>
   );
 };
 
-export default DemandesAgent;
+export default DemandesExportateur;

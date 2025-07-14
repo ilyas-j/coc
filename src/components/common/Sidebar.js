@@ -17,8 +17,8 @@ import {
   Assignment,
   SupervisorAccount,
   People,
-  Visibility,
   Business,
+  Public,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -41,11 +41,18 @@ const Sidebar = () => {
 
     switch (user.typeUser) {
       case USER_TYPES.IMPORTATEUR:
-      case USER_TYPES.EXPORTATEUR:
         return [
           ...commonItems,
           { text: 'Nouvelle Demande', icon: <Add />, path: '/demande/nouvelle' },
           { text: 'Mes Demandes', icon: <ListIcon />, path: '/mes-demandes' },
+        ];
+      
+      case USER_TYPES.EXPORTATEUR:
+        return [
+          ...commonItems,
+          { text: 'Nouvelle Demande', icon: <Add />, path: '/exportateur/demande/nouvelle' },
+          { text: 'Mes Demandes', icon: <ListIcon />, path: '/exportateur/demandes' },
+          { text: 'Mes Partenaires', icon: <Business />, path: '/exportateur/partenaires' },
         ];
       
       case USER_TYPES.AGENT:
@@ -71,9 +78,37 @@ const Sidebar = () => {
 
   const menuItems = getMenuItems();
 
-  const handleNavigation = (path, disabled) => {
-    if (!disabled) {
-      navigate(path);
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
+
+  const getUserTypeLabel = (typeUser) => {
+    switch (typeUser) {
+      case USER_TYPES.IMPORTATEUR:
+        return 'Importateur';
+      case USER_TYPES.EXPORTATEUR:
+        return 'Exportateur';
+      case USER_TYPES.AGENT:
+        return 'Agent';
+      case USER_TYPES.SUPERVISEUR:
+        return 'Superviseur';
+      default:
+        return typeUser;
+    }
+  };
+
+  const getUserTypeIcon = (typeUser) => {
+    switch (typeUser) {
+      case USER_TYPES.IMPORTATEUR:
+        return <Business color="primary" />;
+      case USER_TYPES.EXPORTATEUR:
+        return <Public color="secondary" />;
+      case USER_TYPES.AGENT:
+        return <Assignment color="warning" />;
+      case USER_TYPES.SUPERVISEUR:
+        return <SupervisorAccount color="success" />;
+      default:
+        return <Dashboard />;
     }
   };
 
@@ -96,12 +131,17 @@ const Sidebar = () => {
         <Typography variant="h6" color="primary">
           PortNet COC
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {user?.nom}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {user?.typeUser}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, mb: 1 }}>
+          {getUserTypeIcon(user?.typeUser)}
+          <Box sx={{ ml: 1 }}>
+            <Typography variant="body2" fontWeight="bold">
+              {user?.nom}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {getUserTypeLabel(user?.typeUser)}
+            </Typography>
+          </Box>
+        </Box>
       </Box>
       
       <Divider />
@@ -111,22 +151,51 @@ const Sidebar = () => {
           <ListItem key={item.text} disablePadding>
             <ListItemButton
               selected={location.pathname === item.path}
-              onClick={() => handleNavigation(item.path, item.disabled)}
-              disabled={item.disabled}
-              sx={{
-                opacity: item.disabled ? 0.5 : 1,
-                cursor: item.disabled ? 'not-allowed' : 'pointer',
-              }}
+              onClick={() => handleNavigation(item.path)}
             >
               <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText 
-                primary={item.text} 
-                secondary={item.disabled ? "Bientôt disponible" : null}
-              />
+              <ListItemText primary={item.text} />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
+
+      {/* Informations spécifiques au rôle */}
+      <Box sx={{ mt: 'auto', p: 2 }}>
+        <Divider sx={{ mb: 2 }} />
+        {user?.typeUser === USER_TYPES.EXPORTATEUR && (
+          <Box sx={{ bgcolor: 'background.default', p: 2, borderRadius: 1 }}>
+            <Typography variant="caption" color="text.secondary" gutterBottom>
+              🌍 Exportateur International
+            </Typography>
+            <Typography variant="body2" fontSize="0.75rem">
+              Collaborez avec vos partenaires importateurs pour les demandes COC
+            </Typography>
+          </Box>
+        )}
+        
+        {user?.typeUser === USER_TYPES.IMPORTATEUR && (
+          <Box sx={{ bgcolor: 'background.default', p: 2, borderRadius: 1 }}>
+            <Typography variant="caption" color="text.secondary" gutterBottom>
+              🏢 Importateur Maroc
+            </Typography>
+            <Typography variant="body2" fontSize="0.75rem">
+              Soumettez vos demandes COC pour vos importations
+            </Typography>
+          </Box>
+        )}
+
+        {(user?.typeUser === USER_TYPES.AGENT || user?.typeUser === USER_TYPES.SUPERVISEUR) && (
+          <Box sx={{ bgcolor: 'background.default', p: 2, borderRadius: 1 }}>
+            <Typography variant="caption" color="text.secondary" gutterBottom>
+              🔍 Bureau de Contrôle
+            </Typography>
+            <Typography variant="body2" fontSize="0.75rem">
+              Contrôlez la conformité des marchandises
+            </Typography>
+          </Box>
+        )}
+      </Box>
     </Drawer>
   );
 };

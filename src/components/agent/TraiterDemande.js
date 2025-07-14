@@ -10,7 +10,6 @@ import {
   TextField,
   MenuItem,
   Alert,
-  Divider,
   Chip,
   List,
   ListItem,
@@ -23,7 +22,6 @@ import {
   Stepper,
   Step,
   StepLabel,
-  StepContent,
 } from '@mui/material';
 import {
   PlayArrow,
@@ -34,83 +32,90 @@ import {
   Assignment,
   Gavel,
 } from '@mui/icons-material';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { AVIS_MARCHANDISE, DECISION_GLOBALE, STATUS_DEMANDE } from '../../utils/constants';
+import { useParams, useNavigate } from 'react-router-dom';
+import { AVIS_MARCHANDISE, STATUS_DEMANDE } from '../../utils/constants';
 
 const TraiterDemandeComplete = () => {
-  const location = useLocation();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { demande } = location.state || {};
   
+  const [demande, setDemande] = useState(null);
   const [avisData, setAvisData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [demandeStatus, setDemandeStatus] = useState(demande?.status || STATUS_DEMANDE.DEPOSE);
   const [showFinalDialog, setShowFinalDialog] = useState(false);
-  const [decisionGlobale, setDecisionGlobale] = useState(null);
 
-  // Données enrichies pour la démonstration
-  const demandeComplete = {
-    ...demande,
-    id: demande?.id || 1,
-    numeroDemande: demande?.numeroDemande || 'COC-000001',
-    dateCreation: demande?.dateCreation || '2024-12-15',
-    importateurNom: demande?.importateurNom || 'Société Import Maroc',
-    importateurEmail: 'import@societe.ma',
-    exportateurNom: demande?.exportateurNom || 'Société Export France',
-    exportateurEmail: 'export@societe.fr',
-    exportateurPays: 'France',
-    status: demandeStatus,
-    marchandises: demande?.marchandises || [
-      {
-        id: 1,
-        nomProduit: 'Lampe LED',
-        categorie: 'Équipements d\'éclairage',
-        quantite: 100,
-        uniteQuantite: 'pièce',
-        valeurDh: 15000,
-        fabricant: 'LightTech SA',
-        adresseFabricant: '123 Rue de la Lumière, Lyon',
-        paysOrigine: 'France',
-        avis: null,
-        commentaire: '',
-      },
-      {
-        id: 2,
-        nomProduit: 'Jouet Robot',
-        categorie: 'Jouets et articles pour enfants',
-        quantite: 50,
-        uniteQuantite: 'pièce',
-        valeurDh: 8500,
-        fabricant: 'ToyMaker Ltd',
-        adresseFabricant: '456 Kids Street, Paris',
-        paysOrigine: 'France',
-        avis: null,
-        commentaire: '',
+  // Simulation de données pour développement
+  useEffect(() => {
+    // Simuler le chargement des détails de la demande
+    const demandeSimulee = {
+      id: parseInt(id),
+      numeroDemande: 'COC-2024-123456',
+      dateCreation: '2024-12-15T10:30:00Z',
+      status: STATUS_DEMANDE.DEPOSE,
+      importateurNom: 'Société Import Maroc',
+      importateurEmail: 'import@societe.ma',
+      exportateurNom: 'Société Export France',
+      exportateurEmail: 'export@societe.fr',
+      exportateurPays: 'France',
+      bureauControle: 'TUV',
+      agentNom: 'Agent Dupont',
+      marchandises: [
+        {
+          id: 1,
+          nomProduit: 'Lampe LED',
+          categorie: 'Équipements d\'éclairage',
+          quantite: 100,
+          uniteQuantite: 'pièce',
+          valeurDh: 15000,
+          fabricant: 'LightTech SA',
+          adresseFabricant: '123 Rue de la Lumière, Lyon',
+          paysOrigine: 'France',
+          avis: null,
+          commentaire: null,
+        },
+        {
+          id: 2,
+          nomProduit: 'Jouet Robot',
+          categorie: 'Jouets et articles pour enfants',
+          quantite: 50,
+          uniteQuantite: 'pièce',
+          valeurDh: 8500,
+          fabricant: 'ToyMaker Ltd',
+          adresseFabricant: '456 Kids Street, Paris',
+          paysOrigine: 'France',
+          avis: null,
+          commentaire: null,
+        }
+      ],
+      documents: {
+        facture: { nom: 'facture_001.pdf', url: '/documents/facture_001.pdf' },
+        ficheTechnique: { nom: 'fiche_technique.pdf', url: '/documents/fiche_technique.pdf' }
       }
-    ],
-    documents: {
-      facture: { nom: 'facture_001.pdf', url: '/documents/facture_001.pdf' },
-      ficheTechnique: { nom: 'fiche_technique.pdf', url: '/documents/fiche_technique.pdf' }
-    },
-    bureauControle: 'TUV',
-    agentNom: 'Agent Dupont'
-  };
+    };
+    
+    setDemande(demandeSimulee);
+  }, [id]);
 
-  if (!demande) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error">
-          Demande non trouvée. Veuillez retourner à la liste des demandes.
-        </Alert>
-      </Box>
-    );
-  }
-
-  const handlePrendreEnCharge = () => {
-    setDemandeStatus(STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT);
-    setSuccess('Demande prise en charge avec succès');
+  const handlePrendreEnCharge = async () => {
+    setIsLoading(true);
+    try {
+      // Simulation API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setDemande(prev => ({
+        ...prev,
+        status: STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT,
+        dateTraitement: new Date().toISOString()
+      }));
+      
+      setSuccess('Demande prise en charge avec succès');
+    } catch (error) {
+      setError('Erreur lors de la prise en charge');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAvisChange = (marchandiseId, field, value) => {
@@ -132,10 +137,8 @@ const TraiterDemandeComplete = () => {
     }
 
     setIsLoading(true);
-    setError(null);
-
     try {
-      // Simuler l'appel API
+      // Simulation API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setSuccess('Avis enregistré avec succès');
@@ -148,6 +151,16 @@ const TraiterDemandeComplete = () => {
           submitted: true,
         }
       }));
+
+      // Mettre à jour la marchandise dans la demande
+      setDemande(prev => ({
+        ...prev,
+        marchandises: prev.marchandises.map(m => 
+          m.id === marchandiseId 
+            ? { ...m, avis: avis.avis, commentaire: avis.commentaire }
+            : m
+        )
+      }));
     } catch (error) {
       setError('Erreur lors de l\'enregistrement de l\'avis');
     } finally {
@@ -156,38 +169,62 @@ const TraiterDemandeComplete = () => {
   };
 
   const calculerDecisionGlobale = () => {
+    const marchandisesAvecAvis = demande.marchandises.filter(m => m.avis);
     const avisSubmitted = Object.values(avisData).filter(a => a.submitted);
     
-    if (avisSubmitted.length === 0) return null;
+    if (marchandisesAvecAvis.length + avisSubmitted.length === 0) return null;
     
-    // Logique selon le cahier des charges
-    const hasNonConforme = avisSubmitted.some(a => a.avis === AVIS_MARCHANDISE.NON_CONFORME);
-    if (hasNonConforme) return DECISION_GLOBALE.NON_CONFORME;
+    // Combiner les avis existants et nouveaux
+    const tousLesAvis = [
+      ...marchandisesAvecAvis.map(m => m.avis),
+      ...avisSubmitted.map(a => a.avis)
+    ];
     
-    const hasConformeAvecReserve = avisSubmitted.some(a => a.avis === AVIS_MARCHANDISE.CONFORME_AVEC_RESERVE);
-    if (hasConformeAvecReserve) return DECISION_GLOBALE.CONFORME_AVEC_RESERVE;
+    // Règles selon le cahier des charges
+    const hasNonConforme = tousLesAvis.some(a => a === AVIS_MARCHANDISE.NON_CONFORME);
+    if (hasNonConforme) return 'NON_CONFORME';
     
-    return DECISION_GLOBALE.CONFORME;
+    const hasConformeAvecReserve = tousLesAvis.some(a => a === AVIS_MARCHANDISE.CONFORME_AVEC_RESERVE);
+    if (hasConformeAvecReserve) return 'CONFORME_AVEC_RESERVE';
+    
+    return 'CONFORME';
   };
 
   const handleFinaliserDossier = () => {
-    const avisSubmitted = Object.values(avisData).filter(a => a.submitted);
-    const totalMarchandises = demandeComplete.marchandises.length;
+    const marchandisesTraitees = demande.marchandises.filter(m => m.avis).length;
+    const avisSubmitted = Object.values(avisData).filter(a => a.submitted).length;
+    const totalMarchandises = demande.marchandises.length;
     
-    if (avisSubmitted.length < totalMarchandises) {
+    if (marchandisesTraitees + avisSubmitted < totalMarchandises) {
       setError('Veuillez donner un avis sur toutes les marchandises avant de finaliser');
       return;
     }
     
-    const decision = calculerDecisionGlobale();
-    setDecisionGlobale(decision);
     setShowFinalDialog(true);
   };
 
-  const confirmerFinalisation = () => {
-    setDemandeStatus(STATUS_DEMANDE.CLOTURE);
-    setShowFinalDialog(false);
-    setSuccess(`Dossier finalisé avec la décision: ${decisionGlobale}`);
+  const confirmerFinalisation = async () => {
+    setIsLoading(true);
+    try {
+      // Simulation API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const decisionGlobale = calculerDecisionGlobale();
+      
+      setDemande(prev => ({
+        ...prev,
+        status: STATUS_DEMANDE.CLOTURE,
+        decisionGlobale,
+        dateCloture: new Date().toISOString()
+      }));
+      
+      setShowFinalDialog(false);
+      setSuccess(`Dossier finalisé avec la décision: ${decisionGlobale}`);
+    } catch (error) {
+      setError('Erreur lors de la finalisation');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getAvisColor = (avis) => {
@@ -217,7 +254,7 @@ const TraiterDemandeComplete = () => {
   };
 
   const getStatusStep = () => {
-    switch (demandeStatus) {
+    switch (demande?.status) {
       case STATUS_DEMANDE.DEPOSE:
         return 0;
       case STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT:
@@ -229,24 +266,34 @@ const TraiterDemandeComplete = () => {
     }
   };
 
+  if (!demande) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="info">Chargement des détails de la demande...</Alert>
+      </Box>
+    );
+  }
+
   const avisSubmitted = Object.values(avisData).filter(a => a.submitted);
-  const totalMarchandises = demandeComplete.marchandises.length;
-  const peutFinaliser = avisSubmitted.length === totalMarchandises && demandeStatus === STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT;
+  const marchandisesTraitees = demande.marchandises.filter(m => m.avis).length;
+  const totalMarchandises = demande.marchandises.length;
+  const peutFinaliser = (marchandisesTraitees + avisSubmitted.length) === totalMarchandises && 
+                        demande.status === STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT;
 
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        Traiter la Demande - {demandeComplete.numeroDemande}
+        Traiter la Demande - {demande.numeroDemande}
       </Typography>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
       {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>
+        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess(null)}>
           {success}
         </Alert>
       )}
@@ -268,15 +315,16 @@ const TraiterDemandeComplete = () => {
           </Step>
         </Stepper>
         
-        {demandeStatus === STATUS_DEMANDE.DEPOSE && (
+        {demande.status === STATUS_DEMANDE.DEPOSE && (
           <Box sx={{ mt: 2, textAlign: 'center' }}>
             <Button
               variant="contained"
               startIcon={<PlayArrow />}
               onClick={handlePrendreEnCharge}
               size="large"
+              disabled={isLoading}
             >
-              Prendre en charge cette demande
+              {isLoading ? 'Prise en charge...' : 'Prendre en charge cette demande'}
             </Button>
           </Box>
         )}
@@ -291,24 +339,24 @@ const TraiterDemandeComplete = () => {
             </Typography>
             <List dense>
               <ListItem>
-                <ListItemText primary="Numéro" secondary={demandeComplete.numeroDemande} />
+                <ListItemText primary="Numéro" secondary={demande.numeroDemande} />
               </ListItem>
               <ListItem>
-                <ListItemText primary="Date de création" secondary={new Date(demandeComplete.dateCreation).toLocaleDateString('fr-FR')} />
+                <ListItemText primary="Date de création" secondary={new Date(demande.dateCreation).toLocaleDateString('fr-FR')} />
               </ListItem>
               <ListItem>
-                <ListItemText primary="Bureau de contrôle" secondary={demandeComplete.bureauControle} />
+                <ListItemText primary="Bureau de contrôle" secondary={demande.bureauControle} />
               </ListItem>
               <ListItem>
-                <ListItemText primary="Agent affecté" secondary={demandeComplete.agentNom} />
+                <ListItemText primary="Agent affecté" secondary={demande.agentNom} />
               </ListItem>
               <ListItem>
                 <ListItemText 
                   primary="Statut" 
                   secondary={
                     <Chip 
-                      label={demandeStatus} 
-                      color={demandeStatus === STATUS_DEMANDE.CLOTURE ? 'success' : 'primary'} 
+                      label={demande.status} 
+                      color={demande.status === STATUS_DEMANDE.CLOTURE ? 'success' : 'primary'} 
                       size="small" 
                     />
                   } 
@@ -321,17 +369,17 @@ const TraiterDemandeComplete = () => {
             <Typography variant="h6" gutterBottom>
               Importateur
             </Typography>
-            <Typography><strong>Nom:</strong> {demandeComplete.importateurNom}</Typography>
-            <Typography><strong>Email:</strong> {demandeComplete.importateurEmail}</Typography>
+            <Typography><strong>Nom:</strong> {demande.importateurNom}</Typography>
+            <Typography><strong>Email:</strong> {demande.importateurEmail}</Typography>
           </Paper>
 
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
               Exportateur
             </Typography>
-            <Typography><strong>Nom:</strong> {demandeComplete.exportateurNom}</Typography>
-            <Typography><strong>Email:</strong> {demandeComplete.exportateurEmail}</Typography>
-            <Typography><strong>Pays:</strong> {demandeComplete.exportateurPays}</Typography>
+            <Typography><strong>Nom:</strong> {demande.exportateurNom}</Typography>
+            <Typography><strong>Email:</strong> {demande.exportateurEmail}</Typography>
+            <Typography><strong>Pays:</strong> {demande.exportateurPays}</Typography>
           </Paper>
 
           {/* Documents */}
@@ -340,25 +388,25 @@ const TraiterDemandeComplete = () => {
               Documents fournis
             </Typography>
             <List dense>
-              {demandeComplete.documents.facture && (
+              {demande.documents.facture && (
                 <ListItem>
                   <ListItemIcon>
                     <Description color="primary" />
                   </ListItemIcon>
                   <ListItemText 
                     primary="Facture" 
-                    secondary={demandeComplete.documents.facture.nom}
+                    secondary={demande.documents.facture.nom}
                   />
                 </ListItem>
               )}
-              {demandeComplete.documents.ficheTechnique && (
+              {demande.documents.ficheTechnique && (
                 <ListItem>
                   <ListItemIcon>
                     <Description color="secondary" />
                   </ListItemIcon>
                   <ListItemText 
                     primary="Fiche technique" 
-                    secondary={demandeComplete.documents.ficheTechnique.nom}
+                    secondary={demande.documents.ficheTechnique.nom}
                   />
                 </ListItem>
               )}
@@ -374,8 +422,8 @@ const TraiterDemandeComplete = () => {
             </Typography>
             <Box>
               <Chip 
-                label={`${avisSubmitted.length}/${totalMarchandises} traités`}
-                color={avisSubmitted.length === totalMarchandises ? 'success' : 'warning'}
+                label={`${marchandisesTraitees + avisSubmitted.length}/${totalMarchandises} traités`}
+                color={(marchandisesTraitees + avisSubmitted.length) === totalMarchandises ? 'success' : 'warning'}
               />
               {peutFinaliser && (
                 <Button
@@ -384,6 +432,7 @@ const TraiterDemandeComplete = () => {
                   startIcon={<Gavel />}
                   onClick={handleFinaliserDossier}
                   sx={{ ml: 2 }}
+                  disabled={isLoading}
                 >
                   Finaliser le dossier
                 </Button>
@@ -391,7 +440,7 @@ const TraiterDemandeComplete = () => {
             </Box>
           </Box>
 
-          {demandeComplete.marchandises?.map((marchandise, index) => (
+          {demande.marchandises?.map((marchandise, index) => (
             <Card key={marchandise.id} sx={{ mb: 3 }}>
               <CardContent>
                 <Grid container spacing={3}>
@@ -416,12 +465,12 @@ const TraiterDemandeComplete = () => {
 
                   {/* Section avis */}
                   <Grid item xs={12} md={5}>
-                    <Divider orientation="vertical" sx={{ mr: 2, display: { xs: 'none', md: 'block' } }} />
                     <Typography variant="subtitle1" gutterBottom>
                       <Assignment sx={{ mr: 1, verticalAlign: 'middle' }} />
                       Contrôle de conformité
                     </Typography>
                     
+                    {/* Avis déjà soumis */}
                     {avisData[marchandise.id]?.submitted ? (
                       <Alert severity="success" icon={getAvisIcon(avisData[marchandise.id].avis)}>
                         <Typography variant="subtitle2">
@@ -433,11 +482,22 @@ const TraiterDemandeComplete = () => {
                           </Typography>
                         )}
                       </Alert>
-                    ) : marchandise.avis ? (
+                    ) : 
+                    /* Avis existant */
+                    marchandise.avis ? (
                       <Alert severity={getAvisColor(marchandise.avis)} icon={getAvisIcon(marchandise.avis)}>
-                        Déjà traité: {marchandise.avis}
+                        <Typography variant="subtitle2">
+                          Avis: {marchandise.avis}
+                        </Typography>
+                        {marchandise.commentaire && (
+                          <Typography variant="body2">
+                            Commentaire: {marchandise.commentaire}
+                          </Typography>
+                        )}
                       </Alert>
-                    ) : demandeStatus === STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT ? (
+                    ) : 
+                    /* Formulaire d'avis */
+                    demande.status === STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT ? (
                       <Box>
                         <TextField
                           fullWidth
@@ -507,9 +567,9 @@ const TraiterDemandeComplete = () => {
           <Typography variant="h6" gutterBottom>
             Décision globale calculée:
           </Typography>
-          <Alert severity={getAvisColor(decisionGlobale)} icon={getAvisIcon(decisionGlobale)}>
+          <Alert severity={getAvisColor(calculerDecisionGlobale())} icon={getAvisIcon(calculerDecisionGlobale())}>
             <Typography variant="h6">
-              {decisionGlobale}
+              {calculerDecisionGlobale()}
             </Typography>
           </Alert>
           
@@ -539,15 +599,16 @@ const TraiterDemandeComplete = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowFinalDialog(false)}>
+          <Button onClick={() => setShowFinalDialog(false)} disabled={isLoading}>
             Annuler
           </Button>
           <Button 
             onClick={confirmerFinalisation}
             variant="contained"
             color="success"
+            disabled={isLoading}
           >
-            Confirmer la finalisation
+            {isLoading ? 'Finalisation...' : 'Confirmer la finalisation'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -560,9 +621,9 @@ const TraiterDemandeComplete = () => {
           Retour à la liste
         </Button>
         
-        {demandeStatus === STATUS_DEMANDE.CLOTURE && (
+        {demande.status === STATUS_DEMANDE.CLOTURE && (
           <Chip 
-            label={`Dossier clôturé - ${decisionGlobale || calculerDecisionGlobale()}`}
+            label={`Dossier clôturé - ${demande.decisionGlobale || calculerDecisionGlobale()}`}
             color="success"
             size="large"
           />
