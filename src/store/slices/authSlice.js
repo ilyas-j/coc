@@ -42,7 +42,7 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload;
+        state.user = action.payload; // Utiliser directement la réponse backend
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;

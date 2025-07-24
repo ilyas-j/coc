@@ -29,7 +29,10 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
-    return Promise.reject(error);
+    
+    // Gestion des erreurs spécifiques
+    const message = error.response?.data?.message || 'Une erreur est survenue';
+    throw new Error(message);
   }
 );
 

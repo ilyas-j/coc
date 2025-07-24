@@ -15,21 +15,21 @@ export const STATUS_DEMANDE = {
 
 // Catégories exactes selon le cahier des charges
 export const CATEGORIES_MARCHANDISE = [
-  'Produits industriels et techniques',
-  'Véhicules et pièces détachées',
-  'Équipements d\'éclairage',
-  'Jouets et articles pour enfants',
-  'Matériel électrique et câblage',
-  'Meubles et articles en bois',
-  'Produits agroalimentaires',
-  'Produits pharmaceutiques et cosmétiques',
-  'Textile et habillement',
-  'Équipements informatiques et de télécommunication',
-  'Produits chimiques',
-  'Emballages et produits en plastique',
-  'Produits pétroliers et lubrifiants',
-  'Produits culturels et éducatifs',
-  'Produits agricoles, animaux vivants'
+    'PRODUITS_INDUSTRIELS_ET_TECHNIQUES',
+    'VEHICULES_ET_PIECES_DETACHEES',
+    'EQUIPEMENTS_ECLAIRAGE',
+    'JOUETS_ET_ARTICLES_ENFANTS',
+    'MATERIEL_ELECTRIQUE_ET_CABLAGE',
+    'MEUBLES_ET_ARTICLES_BOIS',
+    'PRODUITS_AGROALIMENTAIRES',
+    'PRODUITS_PHARMACEUTIQUES_ET_COSMETIQUES',
+    'TEXTILE_ET_HABILLEMENT',
+    'EQUIPEMENTS_INFORMATIQUES_ET_TELECOMMUNICATION',
+    'PRODUITS_CHIMIQUES',
+    'EMBALLAGES_ET_PRODUITS_PLASTIQUE',
+    'PRODUITS_PETROLIERS_ET_LUBRIFIANTS',
+    'PRODUITS_CULTURELS_ET_EDUCATIFS',
+    'PRODUITS_AGRICOLES_ANIMAUX_VIVANTS'
 ];
 
 // Catégories nécessitant une fiche technique obligatoire
