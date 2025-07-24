@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -22,6 +22,8 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import {
   Assignment,
@@ -30,85 +32,74 @@ import {
   Visibility,
   Analytics,
 } from '@mui/icons-material';
+import { STATUS_DEMANDE } from '../../utils/constants';
+import { superviseurService } from '../../services/superviseurService';
 
 const DashboardSuperviseur = () => {
+  const [demandes, setDemandes] = useState([]);
+  const [agents, setAgents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [openReaffectation, setOpenReaffectation] = useState(false);
   const [selectedDemande, setSelectedDemande] = useState(null);
   const [nouvelAgent, setNouvelAgent] = useState('');
 
-  // Données de démonstration - Demandes du bureau
-  const demandes = [
-    {
-      id: 1,
-      numeroDemande: 'COC-000001',
-      dateCreation: '2024-12-15',
-      importateurNom: 'Société Import Maroc',
-      exportateurNom: 'Société Export France',
-      status: 'DEPOSE',
-      agentNom: 'Agent Dupont',
-      agentId: 1,
-      marchandises: 3,
-    },
-    {
-      id: 2,
-      numeroDemande: 'COC-000002',
-      dateCreation: '2024-12-14',
-      importateurNom: 'Import Plus SARL',
-      exportateurNom: 'International Export',
-      status: 'EN_COURS_DE_TRAITEMENT',
-      agentNom: 'Agent Martin',
-      agentId: 2,
-      marchandises: 5,
-    },
-    {
-      id: 3,
-      numeroDemande: 'COC-000003',
-      dateCreation: '2024-12-13',
-      importateurNom: 'Global Trade',
-      exportateurNom: 'Europe Export',
-      status: 'CLOTURE',
-      agentNom: 'Agent Dupont',
-      agentId: 1,
-      marchandises: 2,
-      decisionGlobale: 'CONFORME',
-    },
-  ];
+  // Récupérer les données depuis le backend
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [demandesResponse, agentsResponse] = await Promise.all([
+        superviseurService.getDemandesBureau(),
+        superviseurService.getAgentsBureau()
+      ]);
+      
+      setDemandes(demandesResponse);
+      setAgents(agentsResponse);
+    } catch (err) {
+      console.error('Erreur chargement données superviseur:', err);
+      setError('Erreur lors du chargement des données');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Données de démonstration - Agents du bureau
-  const agents = [
-    {
-      id: 1,
-      nom: 'Agent Dupont',
-      email: 'dupont@tuv.ma',
-      disponible: true,
-      enConge: false,
-      chargeTravail: 3,
-    },
-    {
-      id: 2,
-      nom: 'Agent Martin',
-      email: 'martin@tuv.ma',
-      disponible: true,
-      enConge: false,
-      chargeTravail: 5,
-    },
-    {
-      id: 3,
-      nom: 'Agent Rousseau',
-      email: 'rousseau@tuv.ma',
-      disponible: false,
-      enConge: true,
-      chargeTravail: 0,
-    },
-  ];
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleReaffecter = (demande) => {
+    setSelectedDemande(demande);
+    setNouvelAgent('');
+    setOpenReaffectation(true);
+  };
+
+  const confirmerReaffectation = async () => {
+    if (nouvelAgent && selectedDemande) {
+      try {
+        await superviseurService.reaffecterDemande(selectedDemande.id, nouvelAgent);
+        
+        const agentNom = agents.find(a => a.id === parseInt(nouvelAgent))?.user?.nom;
+        alert(`Demande ${selectedDemande.numeroDemande} réaffectée à ${agentNom}`);
+        
+        setOpenReaffectation(false);
+        // Recharger les données
+        await fetchData();
+      } catch (error) {
+        console.error('Erreur réaffectation:', error);
+        alert('Erreur lors de la réaffectation');
+      }
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'DEPOSE':
+      case STATUS_DEMANDE.DEPOSE:
         return 'info';
-      case 'EN_COURS_DE_TRAITEMENT':
+      case STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT:
         return 'warning';
-      case 'CLOTURE':
+      case STATUS_DEMANDE.CLOTURE:
         return 'success';
       default:
         return 'default';
@@ -117,45 +108,57 @@ const DashboardSuperviseur = () => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'DEPOSE':
+      case STATUS_DEMANDE.DEPOSE:
         return 'Déposée';
-      case 'EN_COURS_DE_TRAITEMENT':
+      case STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT:
         return 'En cours';
-      case 'CLOTURE':
+      case STATUS_DEMANDE.CLOTURE:
         return 'Clôturée';
       default:
         return status;
     }
   };
 
-  const handleReaffecter = (demande) => {
-    setSelectedDemande(demande);
-    setNouvelAgent('');
-    setOpenReaffectation(true);
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
   };
 
-  const confirmerReaffectation = () => {
-    if (nouvelAgent && selectedDemande) {
-      const agentNom = agents.find(a => a.id === parseInt(nouvelAgent))?.nom;
-      alert(`Demande ${selectedDemande.numeroDemande} réaffectée à ${agentNom}`);
-      setOpenReaffectation(false);
-    }
-  };
-
-  // Statistiques du bureau
+  // Calcul des statistiques
   const stats = {
     totalDemandes: demandes.length,
-    enCours: demandes.filter(d => d.status === 'EN_COURS_DE_TRAITEMENT').length,
-    deposees: demandes.filter(d => d.status === 'DEPOSE').length,
-    clôturees: demandes.filter(d => d.status === 'CLOTURE').length,
+    enCours: demandes.filter(d => d.status === STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT).length,
+    deposees: demandes.filter(d => d.status === STATUS_DEMANDE.DEPOSE).length,
+    clôturees: demandes.filter(d => d.status === STATUS_DEMANDE.CLOTURE).length,
     agentsActifs: agents.filter(a => a.disponible && !a.enConge).length,
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3, textAlign: 'center' }}>
+        <CircularProgress />
+        <Typography variant="h6" sx={{ mt: 2 }}>
+          Chargement du dashboard...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        Dashboard Superviseur - Bureau TUV
+        Dashboard Superviseur
       </Typography>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
 
       {/* Statistiques */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -230,10 +233,10 @@ const DashboardSuperviseur = () => {
               <TableRow key={demande.id}>
                 <TableCell>{demande.numeroDemande}</TableCell>
                 <TableCell>
-                  {new Date(demande.dateCreation).toLocaleDateString('fr-FR')}
+                  {formatDate(demande.dateCreation)}
                 </TableCell>
                 <TableCell>{demande.importateurNom}</TableCell>
-                <TableCell>{demande.agentNom}</TableCell>
+                <TableCell>{demande.agentNom || 'Non affecté'}</TableCell>
                 <TableCell>
                   <Chip
                     label={getStatusText(demande.status)}
@@ -241,7 +244,7 @@ const DashboardSuperviseur = () => {
                     size="small"
                   />
                 </TableCell>
-                <TableCell>{demande.marchandises}</TableCell>
+                <TableCell>{demande.marchandises?.length || 0}</TableCell>
                 <TableCell>
                   {demande.decisionGlobale ? (
                     <Chip
@@ -260,6 +263,7 @@ const DashboardSuperviseur = () => {
                     startIcon={<SwapHoriz />}
                     onClick={() => handleReaffecter(demande)}
                     sx={{ mr: 1 }}
+                    disabled={demande.status === STATUS_DEMANDE.CLOTURE}
                   >
                     Réaffecter
                   </Button>
@@ -273,6 +277,18 @@ const DashboardSuperviseur = () => {
                 </TableCell>
               </TableRow>
             ))}
+            {demandes.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={8} align="center">
+                  <Box sx={{ py: 4 }}>
+                    <Assignment sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+                    <Typography variant="h6" color="text.secondary">
+                      Aucune demande dans ce bureau
+                    </Typography>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -284,7 +300,7 @@ const DashboardSuperviseur = () => {
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            Agent actuel : {selectedDemande?.agentNom}
+            Agent actuel : {selectedDemande?.agentNom || 'Non affecté'}
           </Typography>
           
           <FormControl fullWidth sx={{ mt: 2 }}>
@@ -295,14 +311,20 @@ const DashboardSuperviseur = () => {
               label="Nouvel Agent"
             >
               {agents
-                .filter(agent => agent.disponible && !agent.enConge && agent.id !== selectedDemande?.agentId)
+                .filter(agent => agent.disponible && !agent.enConge && agent.id !== selectedDemande?.agent?.id)
                 .map((agent) => (
                   <MenuItem key={agent.id} value={agent.id}>
-                    {agent.nom} (Charge: {agent.chargeTravail})
+                    {agent.user?.nom} (Charge: {agent.chargeTravail || 0})
                   </MenuItem>
                 ))}
             </Select>
           </FormControl>
+          
+          {agents.filter(agent => agent.disponible && !agent.enConge).length === 0 && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              Aucun agent disponible pour la réaffectation
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenReaffectation(false)}>
@@ -322,4 +344,3 @@ const DashboardSuperviseur = () => {
 };
 
 export default DashboardSuperviseur;
-

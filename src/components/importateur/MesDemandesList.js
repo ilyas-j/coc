@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -12,39 +12,62 @@ import {
   Chip,
   Button,
   IconButton,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
-import { Visibility, Refresh } from '@mui/icons-material';
+import { Visibility, Refresh, Add } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { STATUS_DEMANDE, USER_TYPES } from '../../utils/constants';
+import { demandeService } from '../../services/demandeService';
 
 const MesDemandesList = () => {
-  // Données de démonstration
-  const demandes = [
-    {
-      id: 1,
-      numeroDemande: 'COC-000001',
-      dateCreation: '2024-12-15',
-      exportateurNom: 'Société Export France',
-      status: 'DEPOSE',
-      bureauControle: 'TUV',
-      decisionGlobale: null,
-    },
-    {
-      id: 2,
-      numeroDemande: 'COC-000002',
-      dateCreation: '2024-12-14',
-      exportateurNom: 'Export International',
-      status: 'CLOTURE',
-      bureauControle: 'SGS',
-      decisionGlobale: 'CONFORME',
-    },
-  ];
+  const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
+  
+  const [demandes, setDemandes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Récupérer les demandes depuis le backend
+  const fetchDemandes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await demandeService.getMesDemandesUtilisateur();
+      setDemandes(response);
+    } catch (err) {
+      console.error('Erreur lors du chargement des demandes:', err);
+      setError('Erreur lors du chargement des demandes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDemandes();
+  }, []);
+
+  const handleRefresh = () => {
+    fetchDemandes();
+  };
+
+  const handleNouvelleDemande = () => {
+    navigate('/demande/nouvelle');
+  };
+
+  const handleVoirDetails = (demandeId) => {
+    navigate(`/demande/${demandeId}`);
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'DEPOSE':
+      case STATUS_DEMANDE.DEPOSE:
         return 'info';
-      case 'EN_COURS_DE_TRAITEMENT':
+      case STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT:
         return 'warning';
-      case 'CLOTURE':
+      case STATUS_DEMANDE.CLOTURE:
         return 'success';
       default:
         return 'default';
@@ -53,34 +76,99 @@ const MesDemandesList = () => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'DEPOSE':
+      case STATUS_DEMANDE.DEPOSE:
         return 'Déposée';
-      case 'EN_COURS_DE_TRAITEMENT':
+      case STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT:
         return 'En cours';
-      case 'CLOTURE':
+      case STATUS_DEMANDE.CLOTURE:
         return 'Clôturée';
       default:
         return status;
     }
   };
 
-  const handleRefresh = () => {
-    window.location.reload();
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3, textAlign: 'center' }}>
+        <CircularProgress />
+        <Typography variant="h6" sx={{ mt: 2 }}>
+          Chargement des demandes...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">
-          Mes Demandes COC
-        </Typography>
-        <Button
+        <Box>
+          <Typography variant="h4">
+            Mes Demandes COC
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {user?.typeUser === USER_TYPES.IMPORTATEUR 
+              ? "Vos demandes d'importation COC"
+              : "Vos demandes d'exportation COC"
+            }
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={handleNouvelleDemande}
+          >
+            Nouvelle Demande
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            Actualiser
+          </Button>
+        </Box>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Statistiques rapides */}
+      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Chip 
+          label={`${demandes.length} demandes au total`}
+          color="primary"
           variant="outlined"
-          startIcon={<Refresh />}
-          onClick={handleRefresh}
-        >
-          Actualiser
-        </Button>
+        />
+        <Chip 
+          label={`${demandes.filter(d => d.status === STATUS_DEMANDE.DEPOSE).length} en attente`}
+          color="info"
+          variant="outlined"
+        />
+        <Chip 
+          label={`${demandes.filter(d => d.status === STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT).length} en cours`}
+          color="warning"
+          variant="outlined"
+        />
+        <Chip 
+          label={`${demandes.filter(d => d.status === STATUS_DEMANDE.CLOTURE).length} terminées`}
+          color="success"
+          variant="outlined"
+        />
       </Box>
 
       <TableContainer component={Paper}>
@@ -89,8 +177,12 @@ const MesDemandesList = () => {
             <TableRow>
               <TableCell>Numéro</TableCell>
               <TableCell>Date de création</TableCell>
-              <TableCell>Exportateur</TableCell>
+              <TableCell>
+                {user?.typeUser === USER_TYPES.IMPORTATEUR ? 'Exportateur' : 'Importateur'}
+              </TableCell>
               <TableCell>Bureau de contrôle</TableCell>
+              <TableCell>Agent</TableCell>
+              <TableCell>Marchandises</TableCell>
               <TableCell>Statut</TableCell>
               <TableCell>Décision</TableCell>
               <TableCell>Actions</TableCell>
@@ -98,13 +190,47 @@ const MesDemandesList = () => {
           </TableHead>
           <TableBody>
             {demandes.map((demande) => (
-              <TableRow key={demande.id}>
-                <TableCell>{demande.numeroDemande}</TableCell>
+              <TableRow key={demande.id} hover>
                 <TableCell>
-                  {new Date(demande.dateCreation).toLocaleDateString('fr-FR')}
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    {demande.numeroDemande}
+                  </Typography>
                 </TableCell>
-                <TableCell>{demande.exportateurNom}</TableCell>
-                <TableCell>{demande.bureauControle || 'En attente'}</TableCell>
+                <TableCell>
+                  {formatDate(demande.dateCreation)}
+                </TableCell>
+                <TableCell>
+                  {user?.typeUser === USER_TYPES.IMPORTATEUR 
+                    ? demande.exportateurNom 
+                    : demande.importateurNom
+                  }
+                </TableCell>
+                <TableCell>{demande.bureauControleNom || 'En attente'}</TableCell>
+                <TableCell>{demande.agentNom || 'Non affecté'}</TableCell>
+                <TableCell>
+                  <Box>
+                    <Chip
+                      label={`${demande.marchandises?.length || 0} article(s)`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                    {demande.marchandises && demande.marchandises.length > 0 && (
+                      <Box sx={{ mt: 1 }}>
+                        {demande.marchandises.slice(0, 2).map((marchandise, index) => (
+                          <Typography key={index} variant="caption" display="block" color="text.secondary">
+                            • {marchandise.nomProduit}
+                          </Typography>
+                        ))}
+                        {demande.marchandises.length > 2 && (
+                          <Typography variant="caption" color="text.secondary">
+                            ... et {demande.marchandises.length - 2} autre(s)
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+                </TableCell>
                 <TableCell>
                   <Chip
                     label={getStatusText(demande.status)}
@@ -120,28 +246,65 @@ const MesDemandesList = () => {
                       size="small"
                     />
                   ) : (
-                    '-'
+                    <Typography variant="body2" color="text.secondary">
+                      En attente
+                    </Typography>
                   )}
                 </TableCell>
                 <TableCell>
-                  <IconButton size="small" color="primary">
+                  <IconButton 
+                    size="small" 
+                    color="primary"
+                    onClick={() => handleVoirDetails(demande.id)}
+                  >
                     <Visibility />
                   </IconButton>
                 </TableCell>
               </TableRow>
             ))}
-            {demandes.length === 0 && (
+            {demandes.length === 0 && !loading && (
               <TableRow>
-                <TableCell colSpan={7} align="center">
-                  <Typography variant="body2" color="text.secondary">
-                    Aucune demande trouvée
-                  </Typography>
+                <TableCell colSpan={9} align="center">
+                  <Box sx={{ py: 4 }}>
+                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                      Aucune demande trouvée
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      Vous n'avez pas encore soumis de demande COC
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      startIcon={<Add />}
+                      onClick={handleNouvelleDemande}
+                    >
+                      Créer ma première demande
+                    </Button>
+                  </Box>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Informations processus */}
+      <Paper sx={{ p: 3, mt: 3, bgcolor: 'background.default' }}>
+        <Typography variant="h6" gutterBottom>
+          📋 Processus COC
+        </Typography>
+        <Typography variant="body2" paragraph>
+          <strong>1. Soumission :</strong> Créez votre demande avec les informations des marchandises
+        </Typography>
+        <Typography variant="body2" paragraph>
+          <strong>2. Affectation :</strong> Un bureau de contrôle et un agent sont automatiquement affectés
+        </Typography>
+        <Typography variant="body2" paragraph>
+          <strong>3. Traitement :</strong> L'agent examine vos marchandises et donne un avis de conformité
+        </Typography>
+        <Typography variant="body2">
+          <strong>4. Résultat :</strong> Vous recevez le certificat de conformité final
+        </Typography>
+      </Paper>
     </Box>
   );
 };

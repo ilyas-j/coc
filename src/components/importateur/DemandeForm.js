@@ -20,14 +20,15 @@ import { Add, Delete } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { CATEGORIES_MARCHANDISE, UNITES_QUANTITE, USER_TYPES } from '../../utils/constants';
+import { demandeService } from '../../services/demandeService';
 
-const steps = ['Informations Importateur', 'Informations Exportateur', 'Marchandises', 'Documents'];
+const steps = ['Informations Importateur', 'Informations Exportateur', 'Marchandises', 'Confirmation'];
 
 const DemandeForm = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const [activeStep, setActiveStep] = useState(0);
-  const [loading, setLoading] = useState(false); // ✅ AJOUTER CET ÉTAT
+  const [loading, setLoading] = useState(false);
   
   // Vérifier que l'utilisateur est autorisé (Importateur OU Exportateur)
   const isAuthorized = user?.typeUser === USER_TYPES.IMPORTATEUR || user?.typeUser === USER_TYPES.EXPORTATEUR;
@@ -48,7 +49,7 @@ const DemandeForm = () => {
     exportateurTelephone: isExportateur ? (user?.telephone || '') : '',
     exportateurEmail: isExportateur ? (user?.email || '') : '',
     exportateurAdresse: '',
-    exportateurPays: isExportateur ? '' : '', // L'exportateur doit renseigner son pays
+    exportateurPays: '',
     exportateurIfu: '',
     
     // Marchandises
@@ -65,9 +66,9 @@ const DemandeForm = () => {
   });
 
   const [errors, setErrors] = useState({});
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [success, setSuccess] = useState('');
 
-  // Vérification d'autorisation APRÈS la déclaration des hooks
+  // Vérification d'autorisation
   if (!isAuthorized) {
     return (
       <Box sx={{ maxWidth: 1000, mx: 'auto', p: 3 }}>
@@ -81,13 +82,15 @@ const DemandeForm = () => {
     );
   }
 
+  // Gestionnaires d'événements
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
+    
+    // Effacer l'erreur quand l'utilisateur tape
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -104,7 +107,7 @@ const DemandeForm = () => {
       )
     }));
     
-    // Clear error
+    // Effacer l'erreur
     const errorKey = `marchandises.${index}.${field}`;
     if (errors[errorKey]) {
       setErrors(prev => ({
@@ -139,6 +142,7 @@ const DemandeForm = () => {
     }
   };
 
+  // Validation par étape
   const validateStep = (step) => {
     const newErrors = {};
 
@@ -201,6 +205,7 @@ const DemandeForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Navigation entre les étapes
   const handleNext = () => {
     if (validateStep(activeStep)) {
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -211,11 +216,13 @@ const DemandeForm = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
+  // Soumission finale
   const handleSubmit = async () => {
     if (!validateStep(2)) return;
 
     try {
       setLoading(true);
+      setErrors({});
       
       const demandeData = {
         importateurNom: formData.importateurNom,
@@ -235,20 +242,22 @@ const DemandeForm = () => {
         marchandises: formData.marchandises
       };
 
-      // ✅ SIMULER L'APPEL API POUR L'INSTANT
-      console.log('Données de la demande:', demandeData);
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulation
-
-      setShowSuccess(true);
+      console.log('Envoi de la demande:', demandeData);
+      const response = await demandeService.creerDemande(demandeData);
+      
+      setSuccess('Demande créée avec succès ! Redirection en cours...');
       setTimeout(() => navigate('/mes-demandes'), 2000);
     } catch (error) {
-      console.error('Erreur:', error);
-      setErrors({ submit: 'Erreur lors de la création de la demande' });
+      console.error('Erreur création demande:', error);
+      setErrors({ 
+        submit: error.response?.data?.message || error.message || 'Erreur lors de la création de la demande' 
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  // Rendu des formulaires par étape
   const renderImportateurForm = () => (
     <Card>
       <CardContent>
@@ -271,7 +280,7 @@ const DemandeForm = () => {
               onChange={handleChange}
               error={!!errors.importateurNom}
               helperText={errors.importateurNom}
-              disabled={isImportateur && !!user?.nom} // Pré-rempli pour l'importateur
+              disabled={isImportateur && !!user?.nom}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -293,7 +302,7 @@ const DemandeForm = () => {
               onChange={handleChange}
               error={!!errors.importateurEmail}
               helperText={errors.importateurEmail}
-              disabled={isImportateur && !!user?.email} // Pré-rempli pour l'importateur
+              disabled={isImportateur && !!user?.email}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -353,7 +362,7 @@ const DemandeForm = () => {
               onChange={handleChange}
               error={!!errors.exportateurNom}
               helperText={errors.exportateurNom}
-              disabled={isExportateur && !!user?.nom} // Pré-rempli pour l'exportateur
+              disabled={isExportateur && !!user?.nom}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -386,7 +395,7 @@ const DemandeForm = () => {
               onChange={handleChange}
               error={!!errors.exportateurEmail}
               helperText={errors.exportateurEmail}
-              disabled={isExportateur && !!user?.email} // Pré-rempli pour l'exportateur
+              disabled={isExportateur && !!user?.email}
             />
           </Grid>
           <Grid item xs={12}>
@@ -461,7 +470,7 @@ const DemandeForm = () => {
                 >
                   {CATEGORIES_MARCHANDISE.map((cat) => (
                     <MenuItem key={cat} value={cat}>
-                      {cat}
+                      {cat.replace(/_/g, ' ')}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -554,36 +563,60 @@ const DemandeForm = () => {
     </Box>
   );
 
-  const renderDocumentsForm = () => (
+  const renderConfirmationForm = () => (
     <Card>
       <CardContent>
         <Typography variant="h6" gutterBottom>
-          Documents Requis
+          Confirmation de la Demande
         </Typography>
         <Alert severity="info" sx={{ mb: 3 }}>
-          Les documents seront demandés après la validation du formulaire. 
-          La facture est obligatoire pour toutes les demandes.
-          La fiche technique est requise pour certaines catégories de marchandises.
+          Vérifiez toutes les informations avant de soumettre votre demande COC.
         </Alert>
         
-        <Typography variant="body1" gutterBottom>
-          <strong>Documents obligatoires :</strong>
+        {/* Résumé importateur */}
+        <Typography variant="subtitle1" gutterBottom sx={{ mt: 3 }}>
+          📋 Importateur
         </Typography>
-        <ul>
-          <li>Facture (obligatoire)</li>
-          <li>Fiche technique (si requis selon la catégorie)</li>
-        </ul>
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item xs={6}>
+            <Typography variant="body2"><strong>Nom:</strong> {formData.importateurNom}</Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2"><strong>Email:</strong> {formData.importateurEmail}</Typography>
+          </Grid>
+        </Grid>
 
-        <Typography variant="body1" gutterBottom sx={{ mt: 2 }}>
-          <strong>Catégories nécessitant une fiche technique :</strong>
+        {/* Résumé exportateur */}
+        <Typography variant="subtitle1" gutterBottom>
+          🌍 Exportateur
         </Typography>
-        <ul>
-          <li>Produits industriels et techniques</li>
-          <li>Équipements d'éclairage</li>
-          <li>Jouets et articles pour enfants</li>
-          <li>Véhicules et pièces détachées</li>
-          <li>Équipements informatiques et de télécommunication</li>
-        </ul>
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item xs={6}>
+            <Typography variant="body2"><strong>Nom:</strong> {formData.exportateurNom}</Typography>
+          </Grid>
+          <Grid item xs={6}>
+            <Typography variant="body2"><strong>Pays:</strong> {formData.exportateurPays}</Typography>
+          </Grid>
+        </Grid>
+
+        {/* Résumé marchandises */}
+        <Typography variant="subtitle1" gutterBottom>
+          📦 Marchandises ({formData.marchandises.length})
+        </Typography>
+        {formData.marchandises.map((marchandise, index) => (
+          <Box key={index} sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1, mb: 1 }}>
+            <Typography variant="body2">
+              <strong>{index + 1}. {marchandise.nomProduit}</strong> - {marchandise.quantite} {marchandise.uniteQuantite}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {marchandise.categorie.replace(/_/g, ' ')} - {marchandise.valeurDh} DH
+            </Typography>
+          </Box>
+        ))}
+
+        <Alert severity="warning" sx={{ mt: 3 }}>
+          Une fois soumise, votre demande sera automatiquement affectée à un bureau de contrôle et un agent pour traitement.
+        </Alert>
       </CardContent>
     </Card>
   );
@@ -597,7 +630,7 @@ const DemandeForm = () => {
       case 2:
         return renderMarchandisesForm();
       case 3:
-        return renderDocumentsForm();
+        return renderConfirmationForm();
       default:
         return 'Étape inconnue';
     }
@@ -614,9 +647,9 @@ const DemandeForm = () => {
         {isExportateur && "En tant qu'exportateur, vous créez une demande COC pour des marchandises que vous voulez exporter vers le Maroc."}
       </Alert>
 
-      {showSuccess && (
+      {success && (
         <Alert severity="success" sx={{ mb: 3 }}>
-          Demande créée avec succès ! Redirection en cours...
+          {success}
         </Alert>
       )}
 
@@ -655,9 +688,10 @@ const DemandeForm = () => {
             <Button
               variant="contained"
               onClick={handleSubmit}
-              disabled={loading || showSuccess}
+              disabled={loading}
+              size="large"
             >
-              {loading ? 'Création...' : showSuccess ? 'Création...' : 'Créer la demande'}
+              {loading ? 'Création...' : 'Créer la demande'}
             </Button>
           ) : (
             <Button variant="contained" onClick={handleNext}>

@@ -17,6 +17,7 @@ import {
 import { PlayArrow, Visibility, Assignment } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_DEMANDE } from '../../utils/constants';
+import { demandeService } from '../../services/demandeService';
 
 const DemandesAgent = () => {
   const navigate = useNavigate();
@@ -24,73 +25,23 @@ const DemandesAgent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Simulation de chargement des demandes affectées à l'agent
-  useEffect(() => {
-    const fetchDemandes = async () => {
-      try {
-        setLoading(true);
-        
-        // Simulation API call - remplacer par vraie API
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const demandesSimulees = [
-          {
-            id: 1,
-            numeroDemande: 'COC-2024-123456',
-            dateCreation: '2024-12-15T10:30:00Z',
-            dateAffectation: '2024-12-15T10:31:00Z',
-            importateurNom: 'Société Import Maroc',
-            exportateurNom: 'Société Export France',
-            status: STATUS_DEMANDE.DEPOSE,
-            marchandises: [
-              { nomProduit: 'Lampe LED', categorie: 'Équipements d\'éclairage' },
-              { nomProduit: 'Jouet Robot', categorie: 'Jouets et articles pour enfants' }
-            ],
-            delaiEstime: '2 jour(s)'
-          },
-          {
-            id: 2,
-            numeroDemande: 'COC-2024-123457',
-            dateCreation: '2024-12-14T14:20:00Z',
-            dateAffectation: '2024-12-14T14:21:00Z',
-            dateTraitement: '2024-12-14T15:00:00Z',
-            importateurNom: 'Global Import SARL',
-            exportateurNom: 'International Export Ltd',
-            status: STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT,
-            marchandises: [
-              { nomProduit: 'T-shirts coton bio', categorie: 'Textile et habillement' },
-              { nomProduit: 'Colorant textile', categorie: 'Produits chimiques' }
-            ],
-            delaiEstime: '3 jour(s)'
-          },
-          {
-            id: 3,
-            numeroDemande: 'COC-2024-123455',
-            dateCreation: '2024-12-13T09:15:00Z',
-            dateAffectation: '2024-12-13T09:16:00Z',
-            dateTraitement: '2024-12-13T10:00:00Z',
-            dateCloture: '2024-12-13T16:30:00Z',
-            importateurNom: 'Commerce International',
-            exportateurNom: 'European Export',
-            status: STATUS_DEMANDE.CLOTURE,
-            decisionGlobale: 'CONFORME',
-            marchandises: [
-              { nomProduit: 'Équipement médical', categorie: 'Produits pharmaceutiques et cosmétiques' }
-            ],
-            delaiEstime: '1 jour(s)'
-          }
-        ];
-        
-        setDemandes(demandesSimulees);
-        setError(null);
-      } catch (err) {
-        setError('Erreur lors du chargement des demandes');
-        console.error('Erreur:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Récupérer les demandes affectées à l'agent depuis le backend
+  const fetchDemandes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await demandeService.getDemandesAgent();
+      setDemandes(response);
+    } catch (err) {
+      console.error('Erreur lors du chargement des demandes:', err);
+      setError('Erreur lors du chargement des demandes affectées');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchDemandes();
   }, []);
 
@@ -98,32 +49,24 @@ const DemandesAgent = () => {
     try {
       setLoading(true);
       
-      // Simulation API call pour prise en charge
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await demandeService.prendreEnCharge(demandeId);
       
-      // Mettre à jour le statut localement
-      setDemandes(prevDemandes => 
-        prevDemandes.map(demande => 
-          demande.id === demandeId 
-            ? { 
-                ...demande, 
-                status: STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT,
-                dateTraitement: new Date().toISOString()
-              }
-            : demande
-        )
-      );
+      // Mettre à jour la liste des demandes
+      await fetchDemandes();
       
+      setError(null);
+      // Optionnel: afficher un message de succès
       alert('Demande prise en charge avec succès !');
     } catch (error) {
-      alert('Erreur lors de la prise en charge');
+      console.error('Erreur prise en charge:', error);
+      setError('Erreur lors de la prise en charge');
     } finally {
       setLoading(false);
     }
   };
 
   const handleVoirDetails = (demande) => {
-    // Naviguer vers la page de traitement avec les données de la demande
+    // Naviguer vers la page de traitement
     navigate(`/agent/traiter/${demande.id}`, { 
       state: { demande } 
     });
@@ -156,6 +99,7 @@ const DemandesAgent = () => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('fr-FR', {
       year: 'numeric',
       month: '2-digit',
@@ -187,7 +131,7 @@ const DemandesAgent = () => {
       </Typography>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
@@ -250,23 +194,25 @@ const DemandesAgent = () => {
                 <TableCell>
                   <Box>
                     <Chip
-                      label={`${demande.marchandises.length} article(s)`}
+                      label={`${demande.marchandises?.length || 0} article(s)`}
                       size="small"
                       color="primary"
                       variant="outlined"
                     />
-                    <Box sx={{ mt: 1 }}>
-                      {demande.marchandises.slice(0, 2).map((marchandise, index) => (
-                        <Typography key={index} variant="caption" display="block" color="text.secondary">
-                          • {marchandise.nomProduit}
-                        </Typography>
-                      ))}
-                      {demande.marchandises.length > 2 && (
-                        <Typography variant="caption" color="text.secondary">
-                          ... et {demande.marchandises.length - 2} autre(s)
-                        </Typography>
-                      )}
-                    </Box>
+                    {demande.marchandises && demande.marchandises.length > 0 && (
+                      <Box sx={{ mt: 1 }}>
+                        {demande.marchandises.slice(0, 2).map((marchandise, index) => (
+                          <Typography key={index} variant="caption" display="block" color="text.secondary">
+                            • {marchandise.nomProduit}
+                          </Typography>
+                        ))}
+                        {demande.marchandises.length > 2 && (
+                          <Typography variant="caption" color="text.secondary">
+                            ... et {demande.marchandises.length - 2} autre(s)
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
                   </Box>
                 </TableCell>
                 <TableCell>
@@ -288,7 +234,7 @@ const DemandesAgent = () => {
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2">
-                    {demande.delaiEstime}
+                    {demande.delaiEstime || 'N/A'}
                   </Typography>
                   {demande.dateTraitement && (
                     <Typography variant="caption" color="text.secondary">

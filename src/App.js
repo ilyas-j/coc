@@ -16,18 +16,19 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Dashboard from './pages/Dashboard';
 
-// Importateur SEULEMENT
+// Importateur ET Exportateur
 import DemandeForm from './components/importateur/DemandeForm';
 import MesDemandesList from './components/importateur/MesDemandesList';
 
 // Agent SEULEMENT
 import DemandesAgent from './components/agent/DemandesAgent';
 
-// Superviseur SEULEMENT (qui peut aussi faire les tâches d'agent)
+// Superviseur SEULEMENT
 import DashboardSuperviseur from './components/superviseur/DashboardSuperviseur';
 import GestionAgents from './components/superviseur/GestionAgents';
 
-// Le DashboardExportateur existant sera utilisé dans le Dashboard principal
+// Debug (développement uniquement)
+import BackendDebug from './components/debug/BackendDebug';
 
 // Common
 import ComingSoon from './components/common/ComingSoon';
@@ -55,6 +56,9 @@ const theme = createTheme({
 });
 
 function App() {
+  // Afficher le composant debug seulement en développement
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
   return (
     <Provider store={store}>
       <ThemeProvider theme={theme}>
@@ -65,6 +69,11 @@ function App() {
               {/* Routes publiques */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              
+              {/* Route debug (développement uniquement) */}
+              {isDevelopment && (
+                <Route path="/debug" element={<BackendDebug />} />
+              )}
               
               {/* Routes protégées */}
               <Route path="/*" element={
@@ -96,7 +105,7 @@ function App() {
                             } 
                           />
                           
-                          {/* Routes AGENT SEULEMENT */}
+                          {/* Routes AGENT ET SUPERVISEUR */}
                           <Route 
                             path="/agent/demandes" 
                             element={
@@ -124,8 +133,6 @@ function App() {
                             } 
                           />
                           
-                          {/* Routes Exportateurs gérées dans le Dashboard principal */}
-                          
                           {/* Route 404 */}
                           <Route path="*" element={<Navigate to="/dashboard" replace />} />
                         </Routes>
@@ -147,6 +154,27 @@ function App() {
               draggable
               pauseOnHover
             />
+
+            {/* Notification de debug en développement */}
+            {isDevelopment && (
+              <Box
+                sx={{
+                  position: 'fixed',
+                  bottom: 16,
+                  right: 16,
+                  zIndex: 9999,
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  p: 1,
+                  borderRadius: 1,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+                onClick={() => window.open('/debug', '_blank')}
+              >
+                🔧 Debug Backend
+              </Box>
+            )}
           </div>
         </Router>
       </ThemeProvider>
