@@ -46,65 +46,7 @@ export const authService = {
       return response.data;
     } catch (error) {
       console.error('Erreur de connexion:', error);
-      
-      // Fallback pour les tests sans backend
-      if (credentials.email === 'importateur@test.ma' && credentials.password === 'password') {
-        const userData = {
-          id: 1,
-          email: 'importateur@test.ma',
-          nom: 'Importateur Test',
-          typeUser: 'IMPORTATEUR',
-          token: 'fake-jwt-token'
-        };
-        localStorage.setItem('token', userData.token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return userData;
-      } else if (credentials.email === 'exportateur@test.com' && credentials.password === 'password') {
-        const userData = {
-          id: 4,
-          email: 'exportateur@test.com',
-          nom: 'Exportateur France',
-          typeUser: 'EXPORTATEUR',
-          token: 'fake-jwt-token'
-        };
-        localStorage.setItem('token', userData.token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return userData;
-      } else if (credentials.email === 'exportateur2@test.de' && credentials.password === 'password') {
-        const userData = {
-          id: 5,
-          email: 'exportateur2@test.de',
-          nom: 'Exportateur Allemagne',
-          typeUser: 'EXPORTATEUR',
-          token: 'fake-jwt-token'
-        };
-        localStorage.setItem('token', userData.token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return userData;
-      } else if (credentials.email === 'agent1@tuv.ma' && credentials.password === 'password') {
-        const userData = {
-          id: 2,
-          email: 'agent1@tuv.ma',
-          nom: 'Agent TUV',
-          typeUser: 'AGENT',
-          token: 'fake-jwt-token'
-        };
-        localStorage.setItem('token', userData.token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return userData;
-      } else if (credentials.email === 'superviseur@tuv.ma' && credentials.password === 'password') {
-        const userData = {
-          id: 3,
-          email: 'superviseur@tuv.ma',
-          nom: 'Superviseur TUV',
-          typeUser: 'SUPERVISEUR',
-          token: 'fake-jwt-token'
-        };
-        localStorage.setItem('token', userData.token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return userData;
-      }
-      
+     
       throw new Error(error.response?.data?.message || 'Email ou mot de passe incorrect');
     }
   },

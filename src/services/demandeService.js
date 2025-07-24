@@ -13,169 +13,21 @@ export const demandeServiceComplete = {
    */
   creerDemande: async (demandeData) => {
     try {
-      // Validation des documents requis
-      const validationDocuments = AffectationService.validerDocumentsRequis(
-        demandeData.marchandises, 
-        demandeData.documents
-      );
-      
-      if (!validationDocuments.isValid) {
-        throw new Error(validationDocuments.errors.join(', '));
-      }
-      
-      // Génération du numéro de demande
-      const numeroDemande = AffectationService.genererNumeroDemande();
-      
-      // Préparation des données avec informations complètes
-      const demandePrete = {
-        ...demandeData,
-        numeroDemande,
-        dateCreation: new Date().toISOString(),
-        status: STATUS_DEMANDE.DEPOSE,
-      };
-      
-      // Affectation automatique bureau + agent
-      const demandeAffectee = AffectationService.affecterNouvelleDemande(demandePrete);
-      
-      // Estimation du délai de traitement
-      const delaiEstime = AffectationService.estimerDelaiTraitement(
-        demandeAffectee.bureauControle,
-        demandeAffectee.marchandises.length
-      );
-      
-      const demandeComplete = {
-        ...demandeAffectee,
-        delaiEstime: `${delaiEstime} jour(s)`,
-      };
-      
-      // Appel API (simulé en fallback)
-      try {
-        const response = await api.post('/demandes', demandeComplete);
-        return response.data;
-      } catch (error) {
-        // Fallback mode développement
-        console.log('[Mode Dev] Simulation création demande:', demandeComplete);
-        
-        // Simuler un délai
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        return {
-          ...demandeComplete,
-          id: Date.now(),
-          success: true,
-          message: `Demande ${numeroDemande} créée et affectée au bureau ${demandeAffectee.bureauControle}`
-        };
-      }
-      
+      const response = await api.post('/demandes', demandeData);
+      return response.data;
     } catch (error) {
       console.error('Erreur création demande:', error);
-      throw new Error(error.message || 'Erreur lors de la création de la demande');
+      throw new Error(error.response?.data?.message || 'Erreur lors de la création');
     }
   },
 
-  /**
-   * Récupérer les demandes de l'importateur connecté
-   */
   getMesDemandesImportateur: async () => {
     try {
       const response = await api.get('/demandes/mes-demandes');
       return response.data;
     } catch (error) {
-      // Fallback avec données simulées
-      console.log('[Mode Dev] Simulation récupération demandes importateur');
-      
-      return [
-        {
-          id: 1,
-          numeroDemande: 'COC-2024-123456',
-          dateCreation: '2024-12-15T10:30:00Z',
-          status: STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT,
-          bureauControle: 'TUV',
-          agentNom: 'Agent Dupont',
-          exportateurNom: 'Société Export France',
-          marchandises: [
-            { nomProduit: 'Lampe LED', categorie: 'Équipements d\'éclairage' },
-            { nomProduit: 'Jouet Robot', categorie: 'Jouets et articles pour enfants' }
-          ],
-          delaiEstime: '2 jour(s)',
-          decisionGlobale: null
-        },
-        {
-          id: 2,
-          numeroDemande: 'COC-2024-123455',
-          dateCreation: '2024-12-14T14:20:00Z',
-          status: STATUS_DEMANDE.CLOTURE,
-          bureauControle: 'SGS',
-          agentNom: 'Agent Martin',
-          exportateurNom: 'Export International',
-          marchandises: [
-            { nomProduit: 'Textile coton', categorie: 'Textile et habillement' }
-          ],
-          delaiEstime: '1 jour(s)',
-          decisionGlobale: 'CONFORME'
-        }
-      ];
-    }
-  },
-
-  /**
-   * Récupérer les demandes affectées à l'agent connecté
-   */
-  getDemandesAgent: async () => {
-    try {
-      const response = await api.get('/demandes/agent');
-      return response.data;
-    } catch (error) {
-      // Fallback avec données simulées
-      console.log('[Mode Dev] Simulation récupération demandes agent');
-      
-      return [
-        {
-          id: 1,
-          numeroDemande: 'COC-2024-123456',
-          dateCreation: '2024-12-15T10:30:00Z',
-          dateAffectation: '2024-12-15T10:31:00Z',
-          status: STATUS_DEMANDE.DEPOSE,
-          importateurNom: 'Société Import Maroc',
-          importateurEmail: 'import@societe.ma',
-          exportateurNom: 'Société Export France',
-          exportateurEmail: 'export@societe.fr',
-          exportateurPays: 'France',
-          marchandises: [
-            {
-              id: 1,
-              nomProduit: 'Lampe LED',
-              categorie: 'Équipements d\'éclairage',
-              quantite: 100,
-              uniteQuantite: 'pièce',
-              valeurDh: 15000,
-              fabricant: 'LightTech SA',
-              adresseFabricant: '123 Rue de la Lumière, Lyon',
-              paysOrigine: 'France',
-              avis: null,
-              commentaire: null
-            },
-            {
-              id: 2,
-              nomProduit: 'Jouet Robot',
-              categorie: 'Jouets et articles pour enfants',
-              quantite: 50,
-              uniteQuantite: 'pièce',
-              valeurDh: 8500,
-              fabricant: 'ToyMaker Ltd',
-              adresseFabricant: '456 Kids Street, Paris',
-              paysOrigine: 'France',
-              avis: null,
-              commentaire: null
-            }
-          ],
-          documents: {
-            facture: { nom: 'facture_001.pdf', url: '/documents/facture_001.pdf' },
-            ficheTechnique: { nom: 'fiche_technique.pdf', url: '/documents/fiche_technique.pdf' }
-          },
-          delaiEstime: '2 jour(s)'
-        }
-      ];
+      console.error('Erreur récupération demandes:', error);
+      throw new Error(error.response?.data?.message || 'Erreur lors du chargement');
     }
   },
 

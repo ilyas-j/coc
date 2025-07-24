@@ -211,19 +211,39 @@ const DemandeForm = () => {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(2)) return;
+  if (!validateStep(1)) return;
 
-    try {
-      // Simulation de l'envoi
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setShowSuccess(true);
-      setTimeout(() => {
-        navigate('/mes-demandes');
-      }, 2000);
-    } catch (error) {
-      console.error('Erreur lors de la création:', error);
-    }
-  };
+  try {
+    // Adapter la structure selon DemandeRequest du backend
+    const demandeData = {
+      // Informations importateur
+      importateurNom: formData.partenaireNom,
+      importateurTelephone: formData.partenaireTelephone,
+      importateurEmail: formData.partenaireEmail,
+      importateurAdresse: formData.partenaireAdresse,
+      importateurCodeDouane: formData.partenaireCodeDouane,
+      importateurIce: formData.partenaireIce,
+
+      // Informations exportateur
+      exportateurNom: isExportateur ? user.nom : formData.partenaireNom,
+      exportateurTelephone: isExportateur ? user.telephone : formData.partenaireTelephone,
+      exportateurEmail: isExportateur ? user.email : formData.partenaireEmail,
+      exportateurAdresse: isExportateur ? user.adresse : formData.partenaireAdresse,
+      exportateurPays: isExportateur ? user.pays : formData.partenairePays,
+      exportateurIfu: isExportateur ? user.ifu : formData.partenaireIfu,
+
+      // Marchandises
+      marchandises: formData.marchandises
+    };
+
+    const response = await demandeServiceComplete.creerDemande(demandeData);
+    setShowSuccess(true);
+    setTimeout(() => navigate('/mes-demandes'), 2000);
+  } catch (error) {
+    console.error('Erreur:', error);
+    setError(error.message);
+  }
+};
 
   const renderImportateurForm = () => (
     <Card>
