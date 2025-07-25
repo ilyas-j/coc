@@ -91,11 +91,11 @@ function App() {
                             } 
                           />
                           
-                          {/* Routes AGENT ET SUPERVISEUR */}
+                          {/* Routes AGENT SEULEMENT */}
                           <Route 
                             path="/agent/demandes" 
                             element={
-                              <ProtectedRoute allowedRoles={[USER_TYPES.AGENT, USER_TYPES.SUPERVISEUR]}>
+                              <ProtectedRoute allowedRoles={[USER_TYPES.AGENT]}>
                                 <DemandesAgent />
                               </ProtectedRoute>
                             } 
@@ -103,10 +103,10 @@ function App() {
                           
                           {/* Routes SUPERVISEUR SEULEMENT */}
                           <Route 
-                            path="/superviseur/dashboard" 
+                            path="/superviseur/vue-ensemble" 
                             element={
                               <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
-                                <DashboardSuperviseur />
+                                <SuperviseurVueEnsemble />
                               </ProtectedRoute>
                             } 
                           />
@@ -118,8 +118,15 @@ function App() {
                               </ProtectedRoute>
                             } 
                           />
+                          <Route 
+                            path="/superviseur/traitement" 
+                            element={
+                              <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
+                                <SuperviseurTraitement />
+                              </ProtectedRoute>
+                            } 
+                          />
                           
-                          {/* Route 404 */}
                           <Route path="*" element={<Navigate to="/dashboard" replace />} />
                         </Routes>
                       </Box>
@@ -129,17 +136,7 @@ function App() {
               } />
             </Routes>
             
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-            />
+            <ToastContainer />
           </div>
         </Router>
       </ThemeProvider>

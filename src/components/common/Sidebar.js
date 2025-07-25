@@ -19,12 +19,14 @@ import {
   People,
   Visibility,
   Business,
+  Analytics,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { USER_TYPES } from '../../utils/constants';
 
 const SIDEBAR_WIDTH = 280;
+
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -48,7 +50,6 @@ const Sidebar = () => {
         ];
       
       case USER_TYPES.EXPORTATEUR:
-        // Les exportateurs peuvent aussi créer des demandes COC
         return [
           ...commonItems,
           { text: 'Nouvelle Demande', icon: <Add />, path: '/demande/nouvelle' },
@@ -56,19 +57,22 @@ const Sidebar = () => {
         ];
       
       case USER_TYPES.AGENT:
-        // Les agents peuvent seulement traiter les demandes qui leur sont affectées
+        // AGENT SEULEMENT - peut traiter des demandes
         return [
           ...commonItems,
-          { text: 'Mes Demandes', icon: <Assignment />, path: '/agent/demandes' },
+          { text: 'Mes Demandes Affectées', icon: <Assignment />, path: '/agent/demandes' },
         ];
       
       case USER_TYPES.SUPERVISEUR:
-        // Les superviseurs ont tous les droits : traiter + superviser + gérer agents
+        // SUPERVISEUR - fonctionnalités complètes + traitement personnel
         return [
           ...commonItems,
-          { text: 'Mes Demandes', icon: <Assignment />, path: '/agent/demandes' },
-          { text: 'Supervision Bureau', icon: <SupervisorAccount />, path: '/superviseur/dashboard' },
-          { text: 'Gestion Agents', icon: <People />, path: '/superviseur/agents' },
+          // Fonctions superviseur
+          { text: 'Vue d\'Ensemble Bureau', icon: <SupervisorAccount />, path: '/superviseur/vue-ensemble' },
+          { text: 'Gestion des Agents', icon: <People />, path: '/superviseur/agents' },
+          { text: 'Statistiques Bureau', icon: <Analytics />, path: '/superviseur/statistiques' },
+          // Traitement personnel (double rôle)
+          { text: 'Mes Demandes Personnelles', icon: <Assignment />, path: '/superviseur/traitement' },
         ];
       
       default:
