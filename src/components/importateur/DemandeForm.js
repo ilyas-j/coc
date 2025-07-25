@@ -19,7 +19,7 @@ import {
 import { Add, Delete } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { CATEGORIES_MARCHANDISE, UNITES_QUANTITE, USER_TYPES } from '../../utils/constants';
+import { CATEGORIES_MARCHANDISE, UNITES_QUANTITE, UNITES_QUANTITE_LABELS, USER_TYPES } from '../../utils/constants';
 import { demandeService } from '../../services/demandeService';
 
 const steps = ['Informations Importateur', 'Informations Exportateur', 'Marchandises', 'Confirmation'];
@@ -100,10 +100,18 @@ const DemandeForm = () => {
   };
 
   const handleMarchandiseChange = (index, field, value) => {
+    // Conversion des valeurs numériques
+    let processedValue = value;
+    
+    if (field === 'quantite' || field === 'valeurDh') {
+      // S'assurer que les valeurs numériques sont des nombres
+      processedValue = value === '' ? '' : Number(value);
+    }
+    
     setFormData(prev => ({
       ...prev,
       marchandises: prev.marchandises.map((item, i) => 
-        i === index ? { ...item, [field]: value } : item
+        i === index ? { ...item, [field]: processedValue } : item
       )
     }));
     
@@ -224,6 +232,7 @@ const DemandeForm = () => {
       setLoading(true);
       setErrors({});
       
+      // Préparation des données avec conversion correcte
       const demandeData = {
         importateurNom: formData.importateurNom,
         importateurTelephone: formData.importateurTelephone,
@@ -239,16 +248,21 @@ const DemandeForm = () => {
         exportateurPays: formData.exportateurPays,
         exportateurIfu: formData.exportateurIfu,
         
-        marchandises: formData.marchandises
+        marchandises: formData.marchandises.map(m => ({
+          ...m,
+          // S'assurer que les valeurs numériques sont des nombres
+          quantite: Number(m.quantite),
+          valeurDh: Number(m.valeurDh)
+        }))
       };
 
-      console.log('Envoi de la demande:', demandeData);
+      console.log('📤 Envoi de la demande:', demandeData);
       const response = await demandeService.creerDemande(demandeData);
       
       setSuccess('Demande créée avec succès ! Redirection en cours...');
       setTimeout(() => navigate('/mes-demandes'), 2000);
     } catch (error) {
-      console.error('Erreur création demande:', error);
+      console.error('❌ Erreur création demande:', error);
       setErrors({ 
         submit: error.response?.data?.message || error.message || 'Erreur lors de la création de la demande' 
       });
@@ -508,7 +522,7 @@ const DemandeForm = () => {
                 >
                   {UNITES_QUANTITE.map((unite) => (
                     <MenuItem key={unite} value={unite}>
-                      {unite}
+                      {UNITES_QUANTITE_LABELS[unite] || unite}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -606,7 +620,7 @@ const DemandeForm = () => {
         {formData.marchandises.map((marchandise, index) => (
           <Box key={index} sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1, mb: 1 }}>
             <Typography variant="body2">
-              <strong>{index + 1}. {marchandise.nomProduit}</strong> - {marchandise.quantite} {marchandise.uniteQuantite}
+              <strong>{index + 1}. {marchandise.nomProduit}</strong> - {marchandise.quantite} {UNITES_QUANTITE_LABELS[marchandise.uniteQuantite] || marchandise.uniteQuantite}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {marchandise.categorie.replace(/_/g, ' ')} - {marchandise.valeurDh} DH

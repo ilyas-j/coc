@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline, Box, Typography } from '@mui/material';
+import { CssBaseline, Box } from '@mui/material';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -27,12 +27,6 @@ import DemandesAgent from './components/agent/DemandesAgent';
 import DashboardSuperviseur from './components/superviseur/DashboardSuperviseur';
 import GestionAgents from './components/superviseur/GestionAgents';
 
-// Debug (développement uniquement)
-import BackendDebug from './components/debug/BackendDebug';
-
-// Common
-import ComingSoon from './components/common/ComingSoon';
-
 import { USER_TYPES } from './utils/constants';
 
 const theme = createTheme({
@@ -56,9 +50,6 @@ const theme = createTheme({
 });
 
 function App() {
-  // Afficher le composant debug seulement en développement
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
   return (
     <Provider store={store}>
       <ThemeProvider theme={theme}>
@@ -69,11 +60,6 @@ function App() {
               {/* Routes publiques */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              
-              {/* Route debug (développement uniquement) */}
-              {isDevelopment && (
-                <Route path="/debug" element={<BackendDebug />} />
-              )}
               
               {/* Routes protégées */}
               <Route path="/*" element={
@@ -154,27 +140,6 @@ function App() {
               draggable
               pauseOnHover
             />
-
-            {/* Notification de debug en développement */}
-            {isDevelopment && (
-              <Box
-                sx={{
-                  position: 'fixed',
-                  bottom: 16,
-                  right: 16,
-                  zIndex: 9999,
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  p: 1,
-                  borderRadius: 1,
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                }}
-                onClick={() => window.open('/debug', '_blank')}
-              >
-                🔧 Debug Backend
-              </Box>
-            )}
           </div>
         </Router>
       </ThemeProvider>

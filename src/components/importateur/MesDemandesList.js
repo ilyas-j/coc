@@ -35,19 +35,38 @@ const MesDemandesList = () => {
       setLoading(true);
       setError(null);
       
+      console.log('🔍 Récupération des demandes pour:', user?.email, '(Type:', user?.typeUser, ')');
+      
       const response = await demandeService.getMesDemandesUtilisateur();
-      setDemandes(response);
+      console.log('✅ Demandes récupérées:', response);
+      
+      setDemandes(response || []);
     } catch (err) {
-      console.error('Erreur lors du chargement des demandes:', err);
-      setError('Erreur lors du chargement des demandes');
+      console.error('❌ Erreur lors du chargement des demandes:', err);
+      
+      // Gestion spécifique des erreurs
+      if (err.status === 404) {
+        setError('Aucune demande trouvée. Vous pouvez créer votre première demande.');
+      } else if (err.status === 403) {
+        setError('Accès non autorisé. Vérifiez vos permissions.');
+      } else if (err.code === 'NETWORK_ERROR') {
+        setError('Erreur de connexion au serveur. Vérifiez que le backend est démarré.');
+      } else {
+        setError(err.message || 'Erreur lors du chargement des demandes');
+      }
+      
+      // En cas d'erreur, initialiser avec un tableau vide
+      setDemandes([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDemandes();
-  }, []);
+    if (user) {
+      fetchDemandes();
+    }
+  }, [user]);
 
   const handleRefresh = () => {
     fetchDemandes();
@@ -88,6 +107,7 @@ const MesDemandesList = () => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('fr-FR', {
       year: 'numeric',
       month: '2-digit',
@@ -201,8 +221,8 @@ const MesDemandesList = () => {
                 </TableCell>
                 <TableCell>
                   {user?.typeUser === USER_TYPES.IMPORTATEUR 
-                    ? demande.exportateurNom 
-                    : demande.importateurNom
+                    ? (demande.exportateurNom || 'Non renseigné')
+                    : (demande.importateurNom || 'Non renseigné')
                   }
                 </TableCell>
                 <TableCell>{demande.bureauControleNom || 'En attente'}</TableCell>
@@ -262,7 +282,7 @@ const MesDemandesList = () => {
                 </TableCell>
               </TableRow>
             ))}
-            {demandes.length === 0 && !loading && (
+            {demandes.length === 0 && !loading && !error && (
               <TableRow>
                 <TableCell colSpan={9} align="center">
                   <Box sx={{ py: 4 }}>

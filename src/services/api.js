@@ -18,7 +18,7 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Log des requêtes en développement
+    // Log des requêtes seulement en développement
     if (process.env.NODE_ENV === 'development') {
       console.log(`🔄 ${config.method?.toUpperCase()} ${config.url}`, config.data || config.params);
     }
@@ -34,7 +34,7 @@ api.interceptors.request.use(
 // Interceptor pour gérer les réponses et erreurs
 api.interceptors.response.use(
   (response) => {
-    // Log des réponses réussies en développement
+    // Log des réponses réussies seulement en développement
     if (process.env.NODE_ENV === 'development') {
       console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`);
     }
@@ -54,7 +54,9 @@ api.interceptors.response.use(
           console.log('🔐 Token expiré, redirection vers login');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          window.location.href = '/login';
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
           break;
           
         case 403:
@@ -88,7 +90,7 @@ api.interceptors.response.use(
       console.error('📡 Pas de réponse du serveur:', error.request);
       
       if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
-        const networkError = new Error('Impossible de se connecter au serveur. Vérifiez que le backend est démarré.');
+        const networkError = new Error('Impossible de se connecter au serveur. Vérifiez que le backend est démarré sur le port 8080.');
         networkError.code = 'NETWORK_ERROR';
         throw networkError;
       }
@@ -149,35 +151,7 @@ export const apiUtils = {
   },
 
   /**
-   * Requête GET avec cache simple
-   */
-  getCached: async (url, cacheTimeMs = 300000) => { // 5 minutes par défaut
-    const cacheKey = `api_cache_${url}`;
-    const cached = localStorage.getItem(cacheKey);
-    
-    if (cached) {
-      const { data, timestamp } = JSON.parse(cached);
-      if (Date.now() - timestamp < cacheTimeMs) {
-        console.log(`💾 Cache hit pour ${url}`);
-        return data;
-      }
-    }
-    
-    try {
-      const response = await api.get(url);
-      localStorage.setItem(cacheKey, JSON.stringify({
-        data: response.data,
-        timestamp: Date.now()
-      }));
-      return response.data;
-    } catch (error) {
-      console.error('❌ Erreur requête cachée:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Nettoyer le cache
+   * Nettoyer le cache localStorage
    */
   clearCache: () => {
     const keys = Object.keys(localStorage);
@@ -216,8 +190,10 @@ export const configureApi = (environment = process.env.NODE_ENV) => {
   api.defaults.baseURL = config.baseURL;
   api.defaults.timeout = config.timeout;
   
-  console.log(`🔧 API configurée pour l'environnement: ${environment}`);
-  console.log(`📍 Base URL: ${config.baseURL}`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🔧 API configurée pour l'environnement: ${environment}`);
+    console.log(`📍 Base URL: ${config.baseURL}`);
+  }
 };
 
 // Auto-configuration au chargement

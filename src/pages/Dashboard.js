@@ -16,7 +16,6 @@ import {
   List as ListIcon,
   SupervisorAccount,
   People,
-  Business,
   Visibility,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
@@ -288,10 +287,10 @@ const Dashboard = () => {
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <Typography variant="body2" gutterBottom>
-                • <strong>Suivi passif :</strong> Visualisation des demandes COC vous concernant
+                • <strong>Collaboration :</strong> Travaillez avec vos importateurs marocains
               </Typography>
               <Typography variant="body2" gutterBottom>
-                • <strong>Partenariats :</strong> Collaboration avec vos importateurs marocains
+                • <strong>Suivi :</strong> Visualisation des demandes COC vous concernant
               </Typography>
               <Typography variant="body2" gutterBottom>
                 • <strong>Notifications :</strong> Alertes sur l'évolution des dossiers

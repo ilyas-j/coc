@@ -32,17 +32,38 @@ export const CATEGORIES_MARCHANDISE = [
     'PRODUITS_AGRICOLES_ANIMAUX_VIVANTS'
 ];
 
-// Catégories nécessitant une fiche technique obligatoire
-export const CATEGORIES_FICHE_TECHNIQUE_OBLIGATOIRE = [
-  'Produits industriels et techniques',
-  'Équipements d\'éclairage',
-  'Jouets et articles pour enfants',
-  'Véhicules et pièces détachées',
-  'Équipements informatiques et de télécommunication'
+// ✅ CORRECTION: Unités exactement synchronisées avec l'enum Java
+// Utiliser les noms d'affichage (displayName) de l'enum Java
+export const UNITES_QUANTITE = [
+  'pièce',    // → PIECE
+  'kg',       // → KG  
+  'tonne',    // → TONNE
+  'litre',    // → LITRE
+  'm²',       // → M2
+  'm³',       // → M3
+  'carton',   // → CARTON
+  'palette'   // → PALETTE
 ];
 
-export const UNITES_QUANTITE = [
-  'pièce', 'kg', 'tonne', 'litre', 'm²', 'm³', 'carton', 'palette'
+// Mapping pour l'affichage avec les labels français
+export const UNITES_QUANTITE_LABELS = {
+  'pièce': 'Pièce(s)',
+  'kg': 'Kilogramme(s)',
+  'tonne': 'Tonne(s)',
+  'litre': 'Litre(s)',
+  'm²': 'Mètre carré(s)',
+  'm³': 'Mètre cube(s)',
+  'carton': 'Carton(s)',
+  'palette': 'Palette(s)'
+};
+
+// Catégories nécessitant une fiche technique obligatoire
+export const CATEGORIES_FICHE_TECHNIQUE_OBLIGATOIRE = [
+  'PRODUITS_INDUSTRIELS_ET_TECHNIQUES',
+  'EQUIPEMENTS_ECLAIRAGE',
+  'JOUETS_ET_ARTICLES_ENFANTS',
+  'VEHICULES_ET_PIECES_DETACHEES',
+  'EQUIPEMENTS_INFORMATIQUES_ET_TELECOMMUNICATION'
 ];
 
 export const BUREAUX_CONTROLE = ['TUV', 'ECF', 'AFNOR', 'ICUM', 'SGS'];
