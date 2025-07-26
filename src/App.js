@@ -38,15 +38,6 @@ const theme = createTheme({
       main: '#dc004e',
     },
   },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h4: {
-      fontWeight: 600,
-    },
-    h5: {
-      fontWeight: 500,
-    },
-  },
 });
 
 function App() {
@@ -103,10 +94,10 @@ function App() {
                           
                           {/* Routes SUPERVISEUR SEULEMENT */}
                           <Route 
-                            path="/superviseur/vue-ensemble" 
+                            path="/superviseur/dashboard" 
                             element={
                               <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
-                                <SuperviseurVueEnsemble />
+                                <DashboardSuperviseur />
                               </ProtectedRoute>
                             } 
                           />
@@ -115,14 +106,6 @@ function App() {
                             element={
                               <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
                                 <GestionAgents />
-                              </ProtectedRoute>
-                            } 
-                          />
-                          <Route 
-                            path="/superviseur/traitement" 
-                            element={
-                              <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
-                                <SuperviseurTraitement />
                               </ProtectedRoute>
                             } 
                           />
