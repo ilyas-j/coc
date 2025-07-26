@@ -23,9 +23,13 @@ import MesDemandesList from './components/importateur/MesDemandesList';
 // Agent SEULEMENT
 import DemandesAgent from './components/agent/DemandesAgent';
 
-// Superviseur SEULEMENT
+// Superviseur COMPLET (selon cahier des charges)
+import SuperviseurVueEnsemble from './components/superviseur/SuperviseurVueEnsemble';
 import DashboardSuperviseur from './components/superviseur/DashboardSuperviseur';
 import GestionAgents from './components/superviseur/GestionAgents';
+import SuperviseurTraitement from './components/superviseur/SuperviseurTraitement';
+import SuperviseurStatistiques from './components/superviseur/SuperviseurStatistiques';
+import TestSuperviseur from './components/superviseur/TestSuperviseur';
 
 import { USER_TYPES } from './utils/constants';
 
@@ -59,7 +63,7 @@ function App() {
                     <Header />
                     <Box sx={{ display: 'flex', flex: 1 }}>
                       <Sidebar />
-                      <Box component="main" sx={{ flexGrow: 1, bgcolor: 'grey.100' }}>
+                      <Box component="main" sx={{ flexGrow: 1, bgcolor: 'grey.100', p: 2 }}>
                         <Routes>
                           <Route path="/" element={<Navigate to="/dashboard" replace />} />
                           <Route path="/dashboard" element={<Dashboard />} />
@@ -92,7 +96,15 @@ function App() {
                             } 
                           />
                           
-                          {/* Routes SUPERVISEUR SEULEMENT */}
+                          {/* 🎯 Routes SUPERVISEUR PRINCIPALES - Vue d'ensemble et réaffectation */}
+                          <Route 
+                            path="/superviseur/vue-ensemble" 
+                            element={
+                              <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
+                                <SuperviseurVueEnsemble />
+                              </ProtectedRoute>
+                            } 
+                          />
                           <Route 
                             path="/superviseur/dashboard" 
                             element={
@@ -106,6 +118,34 @@ function App() {
                             element={
                               <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
                                 <GestionAgents />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/superviseur/statistiques" 
+                            element={
+                              <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
+                                <SuperviseurStatistiques />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          
+                          {/* Routes SUPERVISEUR - Traitement personnel (double rôle) */}
+                          <Route 
+                            path="/superviseur/traitement" 
+                            element={
+                              <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
+                                <SuperviseurTraitement />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          
+                          {/* 🧪 Route de test temporaire */}
+                          <Route 
+                            path="/superviseur/test" 
+                            element={
+                              <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
+                                <TestSuperviseur />
                               </ProtectedRoute>
                             } 
                           />

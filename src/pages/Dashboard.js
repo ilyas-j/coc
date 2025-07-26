@@ -9,6 +9,7 @@ import {
   CardActions,
   Button,
   Alert,
+  Divider,
 } from '@mui/material';
 import {
   Assignment,
@@ -17,6 +18,9 @@ import {
   SupervisorAccount,
   People,
   Visibility,
+  Analytics,
+  ManageAccounts,
+  Dashboard as DashboardIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -75,24 +79,45 @@ const Dashboard = () => {
       
       case USER_TYPES.SUPERVISEUR:
         return [
+          // === FONCTIONS PRINCIPALES SUPERVISEUR ===
           {
-            title: 'Supervision Bureau',
-            description: 'Vue d\'ensemble de toutes les demandes du bureau',
+            title: 'Vue d\'Ensemble Bureau',
+            description: 'Supervision complète de toutes les demandes du bureau',
             icon: <SupervisorAccount fontSize="large" color="primary" />,
-            action: () => navigate('/superviseur/dashboard'),
+            action: () => navigate('/superviseur/vue-ensemble'),
             primary: true,
+            category: 'supervision'
+          },
+          {
+            title: 'Tableau de Bord',
+            description: 'KPIs et métriques du bureau de contrôle',
+            icon: <DashboardIcon fontSize="large" color="info" />,
+            action: () => navigate('/superviseur/dashboard'),
+            category: 'supervision'
           },
           {
             title: 'Gestion des Agents',
             description: 'Gérer les agents et leurs affectations',
             icon: <People fontSize="large" color="secondary" />,
             action: () => navigate('/superviseur/agents'),
+            category: 'supervision'
           },
           {
-            title: 'Mes Demandes Personnelles',
-            description: 'Traiter mes propres demandes affectées',
+            title: 'Statistiques Bureau',
+            description: 'Analyses détaillées et rapports de performance',
+            icon: <Analytics fontSize="large" color="success" />,
+            action: () => navigate('/superviseur/statistiques'),
+            category: 'supervision'
+          },
+          
+          // === TRAITEMENT PERSONNEL (OPTIONNEL) ===
+          {
+            title: 'Traitement Personnel',
+            description: 'Traiter personnellement des demandes (double rôle)',
             icon: <Assignment fontSize="large" color="warning" />,
-            action: () => navigate('/agent/demandes'),
+            action: () => navigate('/superviseur/traitement'),
+            category: 'traitement',
+            secondary: true
           },
         ];
       
@@ -110,7 +135,7 @@ const Dashboard = () => {
       case USER_TYPES.AGENT:
         return "En tant qu'agent de contrôle, vous traitez les demandes COC qui vous sont affectées et donnez des avis de conformité.";
       case USER_TYPES.SUPERVISEUR:
-        return "En tant que superviseur, vous supervisez les activités du bureau de contrôle et gérez l'équipe d'agents.";
+        return "En tant que superviseur, vous dirigez et supervisez les activités du bureau de contrôle, gérez l'équipe d'agents, et pouvez optionnellement traiter des demandes personnellement.";
       default:
         return "";
     }
@@ -132,6 +157,43 @@ const Dashboard = () => {
   };
 
   const quickActions = getQuickActions();
+  const supervisionActions = quickActions.filter(action => action.category === 'supervision');
+  const traitementActions = quickActions.filter(action => action.category === 'traitement');
+  const otherActions = quickActions.filter(action => !action.category);
+
+  const renderActionCard = (action, index) => (
+    <Grid item xs={12} sm={6} md={action.category ? 6 : 4} key={index}>
+      <Card sx={{ 
+        height: '100%',
+        bgcolor: action.primary ? 'primary.light' : 'inherit',
+        border: action.secondary ? '2px dashed' : 'none',
+        borderColor: action.secondary ? 'warning.main' : 'transparent'
+      }}>
+        <CardContent sx={{ textAlign: 'center', p: 3 }}>
+          <Box sx={{ mb: 2 }}>
+            {action.icon}
+          </Box>
+          <Typography variant="h6" gutterBottom color={action.primary ? 'primary.contrastText' : 'inherit'}>
+            {action.title}
+          </Typography>
+          <Typography variant="body2" color={action.primary ? 'primary.contrastText' : 'text.secondary'}>
+            {action.description}
+          </Typography>
+        </CardContent>
+        <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
+          <Button
+            variant={action.primary ? "contained" : action.secondary ? "outlined" : "outlined"}
+            color={action.primary ? "secondary" : "primary"}
+            onClick={action.action}
+            size="large"
+            disabled={action.disabled}
+          >
+            {action.disabled ? "Bientôt disponible" : "Accéder"}
+          </Button>
+        </CardActions>
+      </Card>
+    </Grid>
+  );
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
@@ -147,42 +209,89 @@ const Dashboard = () => {
         {getRoleDescription()}
       </Alert>
 
-      {/* Actions rapides */}
-      <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
-        Actions Rapides
-      </Typography>
-      
-      <Grid container spacing={3}>
-        {quickActions.map((action, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
-            <Card sx={{ height: '100%' }}>
-              <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                <Box sx={{ mb: 2 }}>
-                  {action.icon}
-                </Box>
-                <Typography variant="h6" gutterBottom>
-                  {action.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {action.description}
-                </Typography>
-              </CardContent>
-              <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
-                <Button
-                  variant={action.primary ? "contained" : "outlined"}
-                  onClick={action.action}
-                  size="large"
-                  disabled={action.disabled}
-                >
-                  {action.disabled ? "Bientôt disponible" : "Accéder"}
-                </Button>
-              </CardActions>
-            </Card>
+      {/* Actions rapides - Layout spécial pour superviseur */}
+      {user?.typeUser === USER_TYPES.SUPERVISEUR ? (
+        <>
+          {/* Fonctions de supervision */}
+          <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
+            🎯 Fonctions de Supervision
+          </Typography>
+          
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            {supervisionActions.map((action, index) => renderActionCard(action, index))}
           </Grid>
-        ))}
-      </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Traitement personnel */}
+          <Typography variant="h6" gutterBottom>
+            👤 Traitement Personnel (Optionnel)
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            En plus de vos fonctions de supervision, vous pouvez traiter personnellement des demandes comme un agent
+          </Typography>
+          
+          <Grid container spacing={3}>
+            {traitementActions.map((action, index) => renderActionCard(action, index))}
+          </Grid>
+        </>
+      ) : (
+        <>
+          <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
+            Actions Rapides
+          </Typography>
+          
+          <Grid container spacing={3}>
+            {(otherActions.length > 0 ? otherActions : quickActions).map((action, index) => renderActionCard(action, index))}
+          </Grid>
+        </>
+      )}
 
       {/* Informations spécifiques selon le rôle */}
+      {user?.typeUser === USER_TYPES.SUPERVISEUR && (
+        <Paper sx={{ p: 3, mt: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            🏢 Guide Superviseur - Double Rôle
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" gutterBottom color="primary">
+                Fonctions de Supervision (Principales)
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Vue d'ensemble :</strong> Toutes les demandes du bureau en temps réel
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Gestion d'équipe :</strong> Disponibilité, congés, charge de travail des agents
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Réaffectation :</strong> Redistribuer les demandes entre agents
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Statistiques :</strong> Performances et délais de traitement
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" gutterBottom color="warning.main">
+                Traitement Personnel (Optionnel)
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Double rôle :</strong> Supervision + traitement comme un agent
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Flexible :</strong> Activez/désactivez selon votre charge superviseur
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Même processus :</strong> Prise en charge, avis, finalisation
+              </Typography>
+              <Typography variant="body2" gutterBottom>
+                • <strong>Priorité :</strong> Les fonctions superviseur restent prioritaires
+              </Typography>
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
+
       {user?.typeUser === USER_TYPES.IMPORTATEUR && (
         <Paper sx={{ p: 3, mt: 4 }}>
           <Typography variant="h6" gutterBottom>
@@ -241,38 +350,6 @@ const Dashboard = () => {
               </Typography>
               <Typography variant="body2" gutterBottom>
                 • <strong>Support technique :</strong> support-agents@portnet.ma
-              </Typography>
-            </Grid>
-          </Grid>
-        </Paper>
-      )}
-
-      {user?.typeUser === USER_TYPES.SUPERVISEUR && (
-        <Paper sx={{ p: 3, mt: 4 }}>
-          <Typography variant="h6" gutterBottom>
-            Outils Superviseur
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="body2" gutterBottom>
-                • <strong>Vue d'ensemble :</strong> Toutes les demandes du bureau
-              </Typography>
-              <Typography variant="body2" gutterBottom>
-                • <strong>Réaffectation :</strong> Redistribuer les demandes entre agents
-              </Typography>
-              <Typography variant="body2" gutterBottom>
-                • <strong>Gestion équipe :</strong> Disponibilité et congés des agents
-              </Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="body2" gutterBottom>
-                • <strong>Statistiques :</strong> Performances et délais de traitement
-              </Typography>
-              <Typography variant="body2" gutterBottom>
-                • <strong>Double rôle :</strong> Supervision + traitement personnel
-              </Typography>
-              <Typography variant="body2" gutterBottom>
-                • <strong>Escalade :</strong> Support direction pour cas complexes
               </Typography>
             </Grid>
           </Grid>
