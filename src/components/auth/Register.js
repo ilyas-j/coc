@@ -54,7 +54,7 @@ const Register = () => {
     secteurActivite: '',
     numeroRegistre: '',
 
-    // Informations agent
+    // Informations agent et superviseur
     bureauControleId: '',
     superviseur: false,
   });
@@ -134,9 +134,9 @@ const Register = () => {
             setError('Raison sociale et pays sont obligatoires pour un exportateur');
             return false;
           }
-        } else if (formData.typeUser === USER_TYPES.AGENT) {
+        } else if (formData.typeUser === USER_TYPES.AGENT || formData.typeUser === USER_TYPES.SUPERVISEUR) {
           if (!formData.bureauControleId) {
-            setError('Bureau de contrôle est obligatoire pour un agent');
+            setError('Bureau de contrôle est obligatoire pour un agent ou superviseur');
             return false;
           }
         }
@@ -189,6 +189,9 @@ const Register = () => {
           <MenuItem value={USER_TYPES.AGENT}>
             Agent - Contrôler et traiter les demandes
           </MenuItem>
+          <MenuItem value={USER_TYPES.SUPERVISEUR}>
+            Superviseur - Gérer les agents et superviser le bureau
+          </MenuItem>
         </Select>
       </FormControl>
 
@@ -202,6 +205,9 @@ const Register = () => {
           }
           {formData.typeUser === USER_TYPES.AGENT && 
             "En tant qu'agent, vous pourrez traiter les demandes COC qui vous seront affectées par votre bureau de contrôle."
+          }
+          {formData.typeUser === USER_TYPES.SUPERVISEUR && 
+            "En tant que superviseur, vous pourrez gérer les agents, superviser toutes les demandes du bureau et effectuer des réaffectations."
           }
         </Alert>
       )}
@@ -233,8 +239,8 @@ const Register = () => {
         <TextField
           fullWidth
           label="Email *"
-          name="email"
           type="email"
+          name="email"
           value={formData.email}
           onChange={handleChange}
           required
@@ -445,20 +451,37 @@ const Register = () => {
           </Select>
         </FormControl>
       </Grid>
-      <Grid item xs={12} md={6}>
-        <FormControlLabel
-          control={
-            <Switch
-              name="superviseur"
-              checked={formData.superviseur}
-              onChange={handleChange}
-            />
-          }
-          label="Rôle de superviseur"
-        />
-        <Typography variant="caption" display="block" color="text.secondary">
-          Les superviseurs peuvent gérer les autres agents du bureau
+    </Grid>
+  );
+
+  const renderSuperviseurInfo = () => (
+    <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <Typography variant="h6" gutterBottom>
+          Informations Superviseur
         </Typography>
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <FormControl fullWidth required>
+          <InputLabel>Bureau de contrôle</InputLabel>
+          <Select
+            name="bureauControleId"
+            value={formData.bureauControleId}
+            onChange={handleChange}
+            label="Bureau de contrôle"
+          >
+            {bureauxControle.map((bureau) => (
+              <MenuItem key={bureau.id} value={bureau.id}>
+                {bureau.nom}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
+      <Grid item xs={12}>
+        <Alert severity="info">
+          En tant que superviseur, vous aurez accès à toutes les demandes du bureau, pourrez gérer les agents et réaffecter les demandes.
+        </Alert>
       </Grid>
     </Grid>
   );
@@ -470,6 +493,8 @@ const Register = () => {
       return renderExportateurInfo();
     } else if (formData.typeUser === USER_TYPES.AGENT) {
       return renderAgentInfo();
+    } else if (formData.typeUser === USER_TYPES.SUPERVISEUR) {
+      return renderSuperviseurInfo();
     }
     return null;
   };
