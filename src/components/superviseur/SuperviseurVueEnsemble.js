@@ -28,6 +28,9 @@ import {
   Tooltip,
   TextField,
   InputAdornment,
+  Badge,
+  LinearProgress,
+  Divider,
 } from '@mui/material';
 import {
   Assignment,
@@ -42,6 +45,10 @@ import {
   CheckCircle,
   Schedule,
   ErrorOutline,
+  FilterList,
+  PriorityHigh,
+  PersonOff,
+  WorkOff,
 } from '@mui/icons-material';
 import { STATUS_DEMANDE } from '../../utils/constants';
 import { superviseurService } from '../../services/superviseurService';
@@ -63,6 +70,7 @@ const SuperviseurVueEnsemble = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [agentFilter, setAgentFilter] = useState('ALL');
+  const [showFilters, setShowFilters] = useState(false);
 
   // Récupérer les données depuis le backend
   const fetchData = async () => {
@@ -99,6 +107,9 @@ const SuperviseurVueEnsemble = () => {
 
   useEffect(() => {
     fetchData();
+    // Actualiser automatiquement toutes les 30 secondes
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Filtrer les demandes selon les critères
@@ -117,7 +128,12 @@ const SuperviseurVueEnsemble = () => {
       return matchSearch && matchStatus && matchAgent;
     });
 
-    return filtered;
+    // Trier par priorité (demandes non affectées en premier)
+    return filtered.sort((a, b) => {
+      if (!a.agentNom && b.agentNom) return -1;
+      if (a.agentNom && !b.agentNom) return 1;
+      return new Date(b.dateCreation) - new Date(a.dateCreation);
+    });
   };
 
   const handleReaffecter = (demande) => {
@@ -145,7 +161,7 @@ const SuperviseurVueEnsemble = () => {
       await superviseurService.reaffecterDemande(selectedDemande.id, nouvelAgent);
       
       const agentNom = agents.find(a => a.id === parseInt(nouvelAgent))?.nom;
-      setSuccess(`Demande ${selectedDemande.numeroDemande} réaffectée à ${agentNom}`);
+      setSuccess(`✅ Demande ${selectedDemande.numeroDemande} réaffectée à ${agentNom}`);
       
       setOpenReaffectation(false);
       
@@ -157,6 +173,34 @@ const SuperviseurVueEnsemble = () => {
       setError(`Erreur lors de la réaffectation: ${error.message}`);
     } finally {
       setReaffectationLoading(false);
+    }
+  };
+
+  const handleReaffectationLot = async (demandesNonAffectees) => {
+    if (demandesNonAffectees.length === 0) return;
+    
+    const agentsDisponibles = agents.filter(a => a.disponible && !a.enConge);
+    if (agentsDisponibles.length === 0) {
+      setError('Aucun agent disponible pour la réaffectation automatique');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      let agentIndex = 0;
+
+      for (const demande of demandesNonAffectees) {
+        const agent = agentsDisponibles[agentIndex % agentsDisponibles.length];
+        await superviseurService.reaffecterDemande(demande.id, agent.id);
+        agentIndex++;
+      }
+
+      setSuccess(`✅ ${demandesNonAffectees.length} demandes réaffectées automatiquement`);
+      await fetchData();
+    } catch (error) {
+      setError(`Erreur réaffectation en lot: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -210,7 +254,26 @@ const SuperviseurVueEnsemble = () => {
     });
   };
 
+  const getPriorityLevel = (demande) => {
+    if (!demande.agentNom) return 'urgent';
+    if (demande.status === 'DEPOSE') return 'high';
+    if (demande.status === 'EN_COURS_DE_TRAITEMENT') return 'medium';
+    return 'low';
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'urgent': return 'error';
+      case 'high': return 'warning';
+      case 'medium': return 'info';
+      default: return 'success';
+    }
+  };
+
   const filteredDemandes = getFilteredDemandes();
+  const demandesNonAffectees = demandes.filter(d => !d.agentNom);
+  const agentsDisponibles = agents.filter(a => a.disponible && !a.enConge);
+  const agentsEnConge = agents.filter(a => a.enConge);
 
   // Calcul des statistiques en temps réel
   const stats = {
@@ -218,8 +281,9 @@ const SuperviseurVueEnsemble = () => {
     enCours: demandes.filter(d => d.status === 'EN_COURS_DE_TRAITEMENT').length,
     deposees: demandes.filter(d => d.status === 'DEPOSE').length,
     clôturees: demandes.filter(d => d.status === 'CLOTURE').length,
-    nonAffectees: demandes.filter(d => !d.agentNom).length,
-    agentsActifs: agents.filter(a => a.disponible && !a.enConge).length,
+    nonAffectees: demandesNonAffectees.length,
+    agentsActifs: agentsDisponibles.length,
+    agentsEnConge: agentsEnConge.length,
     chargeGlobale: agents.reduce((sum, a) => sum + (a.chargeTravail || 0), 0),
   };
 
@@ -249,6 +313,17 @@ const SuperviseurVueEnsemble = () => {
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
+          {stats.nonAffectees > 0 && (
+            <Button
+              variant="contained"
+              color="warning"
+              startIcon={<SwapHoriz />}
+              onClick={() => handleReaffectationLot(demandesNonAffectees)}
+              disabled={loading || agentsDisponibles.length === 0}
+            >
+              Réaffecter tout ({stats.nonAffectees})
+            </Button>
+          )}
           <Button
             variant="outlined"
             startIcon={<Refresh />}
@@ -260,7 +335,7 @@ const SuperviseurVueEnsemble = () => {
           <Button
             variant="contained"
             startIcon={<Analytics />}
-            onClick={() => {/* Navigation vers statistiques détaillées */}}
+            onClick={() => window.open('/superviseur/statistiques')}
           >
             Rapport Détaillé
           </Button>
@@ -276,6 +351,27 @@ const SuperviseurVueEnsemble = () => {
       {success && (
         <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess(null)}>
           {success}
+        </Alert>
+      )}
+
+      {/* Alertes critiques */}
+      {stats.nonAffectees > 0 && (
+        <Alert severity="error" sx={{ mb: 3 }} icon={<PriorityHigh />}>
+          <Typography variant="body2">
+            <strong>🚨 URGENT :</strong> {stats.nonAffectees} demande(s) non affectée(s) nécessitent une attention immédiate !
+            {agentsDisponibles.length === 0 && (
+              <span> <strong>Aucun agent disponible</strong> - Vérifiez les disponibilités.</span>
+            )}
+          </Typography>
+        </Alert>
+      )}
+
+      {agentsEnConge.length > 0 && (
+        <Alert severity="warning" sx={{ mb: 3 }} icon={<PersonOff />}>
+          <Typography variant="body2">
+            <strong>⚠️ Attention :</strong> {agentsEnConge.length} agent(s) en congé. 
+            Surveillez la charge de travail des agents actifs.
+          </Typography>
         </Alert>
       )}
 
@@ -320,7 +416,9 @@ const SuperviseurVueEnsemble = () => {
         <Grid item xs={12} sm={6} md={2}>
           <Card sx={{ bgcolor: stats.nonAffectees > 0 ? 'error.light' : 'grey.100' }}>
             <CardContent sx={{ textAlign: 'center' }}>
-              <ErrorOutline fontSize="large" color={stats.nonAffectees > 0 ? 'error' : 'disabled'} />
+              <Badge badgeContent={stats.nonAffectees} color="error">
+                <ErrorOutline fontSize="large" color={stats.nonAffectees > 0 ? 'error' : 'disabled'} />
+              </Badge>
               <Typography variant="h4">{stats.nonAffectees}</Typography>
               <Typography variant="body2">Non Affectées</Typography>
             </CardContent>
@@ -337,72 +435,117 @@ const SuperviseurVueEnsemble = () => {
         </Grid>
       </Grid>
 
-      {/* Alertes importantes */}
-      {stats.nonAffectees > 0 && (
-        <Alert severity="warning" sx={{ mb: 3 }}>
-          <Typography variant="body2">
-            ⚠️ {stats.nonAffectees} demande(s) non affectée(s) nécessitent une attention immédiate
+      {/* Barre de charge globale */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box display="flex" alignItems="center" gap={2}>
+          <Typography variant="h6">
+            Charge globale du bureau:
           </Typography>
-        </Alert>
-      )}
+          <Box sx={{ flexGrow: 1 }}>
+            <LinearProgress
+              variant="determinate"
+              value={Math.min(100, (stats.chargeGlobale / (agents.length * 10)) * 100)}
+              color={stats.chargeGlobale > agents.length * 8 ? 'error' : 'primary'}
+              sx={{ height: 8, borderRadius: 1 }}
+            />
+          </Box>
+          <Typography variant="body2">
+            {stats.chargeGlobale}/{agents.length * 10}
+          </Typography>
+        </Box>
+      </Paper>
 
       {/* Filtres et recherche */}
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              placeholder="Rechercher..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <FormControl fullWidth>
-              <InputLabel>Statut</InputLabel>
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                label="Statut"
-              >
-                <MenuItem value="ALL">Tous</MenuItem>
-                <MenuItem value="DEPOSE">Déposées</MenuItem>
-                <MenuItem value="EN_COURS_DE_TRAITEMENT">En cours</MenuItem>
-                <MenuItem value="CLOTURE">Clôturées</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <FormControl fullWidth>
-              <InputLabel>Agent</InputLabel>
-              <Select
-                value={agentFilter}
-                onChange={(e) => setAgentFilter(e.target.value)}
-                label="Agent"
-              >
-                <MenuItem value="ALL">Tous</MenuItem>
-                <MenuItem value="UNASSIGNED">❌ Non affectées</MenuItem>
-                {agents.map((agent) => (
-                  <MenuItem key={agent.id} value={agent.nom}>
-                    {agent.nom} {agent.enConge ? '(Congé)' : ''}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h6">
+            Filtres et Recherche
+          </Typography>
+          <Button
+            startIcon={<FilterList />}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            {showFilters ? 'Masquer' : 'Afficher'} Filtres
+          </Button>
+        </Box>
+        
+        {showFilters && (
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} md={3}>
+              <TextField
+                fullWidth
+                placeholder="Rechercher..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <FormControl fullWidth>
+                <InputLabel>Statut</InputLabel>
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  label="Statut"
+                >
+                  <MenuItem value="ALL">Tous</MenuItem>
+                  <MenuItem value="DEPOSE">Déposées</MenuItem>
+                  <MenuItem value="EN_COURS_DE_TRAITEMENT">En cours</MenuItem>
+                  <MenuItem value="CLOTURE">Clôturées</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <FormControl fullWidth>
+                <InputLabel>Agent</InputLabel>
+                <Select
+                  value={agentFilter}
+                  onChange={(e) => setAgentFilter(e.target.value)}
+                  label="Agent"
+                >
+                  <MenuItem value="ALL">Tous</MenuItem>
+                  <MenuItem value="UNASSIGNED">
+                    <Box display="flex" alignItems="center">
+                      <ErrorOutline color="error" sx={{ mr: 1 }} />
+                      Non affectées
+                    </Box>
                   </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                  {agents.map((agent) => (
+                    <MenuItem key={agent.id} value={agent.nom}>
+                      <Box display="flex" alignItems="center">
+                        {agent.enConge && <WorkOff sx={{ mr: 1, color: 'warning.main' }} />}
+                        {agent.nom} {agent.enConge ? '(Congé)' : ''}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Typography variant="body2" color="text.secondary">
+                Affichage : {filteredDemandes.length} / {demandes.length} demandes
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('ALL');
+                  setAgentFilter('ALL');
+                }}
+              >
+                Réinitialiser
+              </Button>
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={3}>
-            <Typography variant="body2" color="text.secondary">
-              Affichage : {filteredDemandes.length} / {demandes.length} demandes
-            </Typography>
-          </Grid>
-        </Grid>
+        )}
       </Paper>
 
       {/* Liste des demandes avec fonctionnalités superviseur */}
@@ -410,6 +553,7 @@ const SuperviseurVueEnsemble = () => {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>Priorité</TableCell>
               <TableCell>Numéro</TableCell>
               <TableCell>Date Création</TableCell>
               <TableCell>Importateur</TableCell>
@@ -422,122 +566,136 @@ const SuperviseurVueEnsemble = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredDemandes.map((demande) => (
-              <TableRow 
-                key={demande.id} 
-                hover
-                sx={{
-                  bgcolor: !demande.agentNom ? 'error.light' : 'inherit',
-                  '&:hover': {
-                    bgcolor: !demande.agentNom ? 'error.main' : 'action.hover',
-                  }
-                }}
-              >
-                <TableCell>
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    {demande.numeroDemande}
-                  </Typography>
-                  {!demande.agentNom && (
-                    <Chip 
-                      label="⚠️ NON AFFECTÉE" 
-                      color="error" 
-                      size="small" 
-                      variant="outlined"
-                    />
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {formatDate(demande.dateCreation)}
-                  </Typography>
-                  {demande.dateAffectation && (
-                    <Typography variant="caption" color="text.secondary">
-                      Affectée: {formatDate(demande.dateAffectation)}
-                    </Typography>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" fontWeight="500">
-                    {demande.importateurNom}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {demande.exportateurNom || '-'}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  {demande.agentNom ? (
-                    <Box>
-                      <Typography variant="body2" fontWeight="500">
-                        {demande.agentNom}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Charge: {demande.agentCharge || 0}
-                      </Typography>
-                    </Box>
-                  ) : (
-                    <Chip label="❌ Non affecté" color="error" size="small" />
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    icon={getStatusIcon(demande.status)}
-                    label={getStatusText(demande.status)}
-                    color={getStatusColor(demande.status)}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {demande.marchandises?.length || 0} article(s)
-                  </Typography>
-                  {demande.marchandises && demande.marchandises.length > 0 && (
-                    <Typography variant="caption" color="text.secondary">
-                      Val: {demande.marchandises.reduce((sum, m) => sum + (m.valeurDh || 0), 0)} DH
-                    </Typography>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {demande.decisionGlobale ? (
+            {filteredDemandes.map((demande) => {
+              const priority = getPriorityLevel(demande);
+              const isUrgent = !demande.agentNom;
+              
+              return (
+                <TableRow 
+                  key={demande.id} 
+                  hover
+                  sx={{
+                    bgcolor: isUrgent ? 'error.light' : 'inherit',
+                    '&:hover': {
+                      bgcolor: isUrgent ? 'error.main' : 'action.hover',
+                    }
+                  }}
+                >
+                  <TableCell>
                     <Chip
-                      label={demande.decisionGlobale}
-                      color={demande.decisionGlobale === 'CONFORME' ? 'success' : 'error'}
+                      size="small"
+                      icon={isUrgent ? <PriorityHigh /> : getStatusIcon(demande.status)}
+                      label={isUrgent ? 'URGENT' : priority.toUpperCase()}
+                      color={getPriorityColor(priority)}
+                      variant={isUrgent ? 'filled' : 'outlined'}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      {demande.numeroDemande}
+                    </Typography>
+                    {isUrgent && (
+                      <Chip 
+                        label="⚠️ NON AFFECTÉE" 
+                        color="error" 
+                        size="small" 
+                        variant="outlined"
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {formatDate(demande.dateCreation)}
+                    </Typography>
+                    {demande.dateAffectation && (
+                      <Typography variant="caption" color="text.secondary">
+                        Affectée: {formatDate(demande.dateAffectation)}
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight="500">
+                      {demande.importateurNom}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {demande.exportateurNom || '-'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    {demande.agentNom ? (
+                      <Box>
+                        <Typography variant="body2" fontWeight="500">
+                          {demande.agentNom}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Charge: {agents.find(a => a.nom === demande.agentNom)?.chargeTravail || 0}/10
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Chip label="❌ Non affecté" color="error" size="small" />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      icon={getStatusIcon(demande.status)}
+                      label={getStatusText(demande.status)}
+                      color={getStatusColor(demande.status)}
                       size="small"
                     />
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      En attente
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {demande.marchandises?.length || 0} article(s)
                     </Typography>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <Tooltip title="Réaffecter à un autre agent">
-                      <IconButton
+                    {demande.marchandises && demande.marchandises.length > 0 && (
+                      <Typography variant="caption" color="text.secondary">
+                        Val: {demande.marchandises.reduce((sum, m) => sum + (m.valeurDh || 0), 0)} DH
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {demande.decisionGlobale ? (
+                      <Chip
+                        label={demande.decisionGlobale}
+                        color={demande.decisionGlobale === 'CONFORME' ? 'success' : 'error'}
                         size="small"
-                        color="primary"
-                        onClick={() => handleReaffecter(demande)}
-                        disabled={demande.status === 'CLOTURE'}
-                      >
-                        <SwapHoriz />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Voir détails de la demande">
-                      <IconButton
-                        size="small"
-                        color="secondary"
-                      >
-                        <Visibility />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
+                      />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        En attente
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <Tooltip title="Réaffecter à un autre agent">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleReaffecter(demande)}
+                          disabled={demande.status === 'CLOTURE'}
+                        >
+                          <SwapHoriz />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Voir détails de la demande">
+                        <IconButton
+                          size="small"
+                          color="secondary"
+                        >
+                          <Visibility />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             {filteredDemandes.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} align="center">
+                <TableCell colSpan={10} align="center">
                   <Box sx={{ py: 4 }}>
                     <Assignment sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
                     <Typography variant="h6" color="text.secondary">
@@ -674,6 +832,7 @@ const SuperviseurVueEnsemble = () => {
         <Typography variant="body2">
           <strong>🏢 Vous supervisez actuellement :</strong> {stats.totalDemandes} demandes • {agents.length} agents • 
           {stats.nonAffectees > 0 && ` ⚠️ ${stats.nonAffectees} demandes nécessitent une affectation`}
+          {stats.agentsEnConge > 0 && ` • ${stats.agentsEnConge} agents en congé`}
         </Typography>
       </Alert>
     </Box>

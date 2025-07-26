@@ -22,8 +22,9 @@ import MesDemandesList from './components/importateur/MesDemandesList';
 
 // Agent SEULEMENT
 import DemandesAgent from './components/agent/DemandesAgent';
+import TraiterDemande from './components/agent/TraiterDemande';
 
-// Superviseur COMPLET (selon cahier des charges)
+// 🎯 SUPERVISEUR COMPLET - Toutes les fonctionnalités
 import SuperviseurVueEnsemble from './components/superviseur/SuperviseurVueEnsemble';
 import DashboardSuperviseur from './components/superviseur/DashboardSuperviseur';
 import GestionAgents from './components/superviseur/GestionAgents';
@@ -68,7 +69,9 @@ function App() {
                           <Route path="/" element={<Navigate to="/dashboard" replace />} />
                           <Route path="/dashboard" element={<Dashboard />} />
                           
-                          {/* Routes IMPORTATEUR ET EXPORTATEUR */}
+                          {/* ==========================================
+                              ROUTES IMPORTATEUR ET EXPORTATEUR 
+                              ========================================== */}
                           <Route 
                             path="/demande/nouvelle" 
                             element={
@@ -86,7 +89,9 @@ function App() {
                             } 
                           />
                           
-                          {/* Routes AGENT SEULEMENT */}
+                          {/* ==========================================
+                              ROUTES AGENT SEULEMENT 
+                              ========================================== */}
                           <Route 
                             path="/agent/demandes" 
                             element={
@@ -95,8 +100,19 @@ function App() {
                               </ProtectedRoute>
                             } 
                           />
+                          <Route 
+                            path="/agent/traiter/:id" 
+                            element={
+                              <ProtectedRoute allowedRoles={[USER_TYPES.AGENT]}>
+                                <TraiterDemande />
+                              </ProtectedRoute>
+                            } 
+                          />
                           
-                          {/* 🎯 Routes SUPERVISEUR PRINCIPALES - Vue d'ensemble et réaffectation */}
+                          {/* ==========================================
+                              🎯 ROUTES SUPERVISEUR PRINCIPALES 
+                              Vue d'ensemble + Réaffectation + Gestion
+                              ========================================== */}
                           <Route 
                             path="/superviseur/vue-ensemble" 
                             element={
@@ -130,7 +146,10 @@ function App() {
                             } 
                           />
                           
-                          {/* Routes SUPERVISEUR - Traitement personnel (double rôle) */}
+                          {/* ==========================================
+                              ROUTES SUPERVISEUR - Traitement personnel
+                              Le superviseur peut aussi traiter comme un agent
+                              ========================================== */}
                           <Route 
                             path="/superviseur/traitement" 
                             element={
@@ -139,8 +158,18 @@ function App() {
                               </ProtectedRoute>
                             } 
                           />
+                          <Route 
+                            path="/superviseur/traiter/:id" 
+                            element={
+                              <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
+                                <TraiterDemande />
+                              </ProtectedRoute>
+                            } 
+                          />
                           
-                          {/* 🧪 Route de test temporaire */}
+                          {/* ==========================================
+                              🧪 ROUTE DE TEST SUPERVISEUR (temporaire)
+                              ========================================== */}
                           <Route 
                             path="/superviseur/test" 
                             element={
@@ -150,6 +179,7 @@ function App() {
                             } 
                           />
                           
+                          {/* Route par défaut */}
                           <Route path="*" element={<Navigate to="/dashboard" replace />} />
                         </Routes>
                       </Box>
