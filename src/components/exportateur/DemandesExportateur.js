@@ -27,65 +27,17 @@ const DemandesExportateur = () => {
 
   // Simulation de chargement des demandes pour l'exportateur
   useEffect(() => {
-    const fetchDemandes = async () => {
-      try {
-        setLoading(true);
-        
-        // Simulation API call - adapter selon votre backend
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const demandesSimulees = [
-          {
-            id: 1,
-            numeroDemande: 'COC-2024-123456',
-            dateCreation: '2024-12-15T10:30:00Z',
-            importateurNom: 'Société Import Maroc',
-            status: STATUS_DEMANDE.DEPOSE,
-            bureauControle: 'TUV',
-            marchandises: [
-              { nomProduit: 'Lampe LED', categorie: 'Équipements d\'éclairage' },
-              { nomProduit: 'Jouet Robot', categorie: 'Jouets et articles pour enfants' }
-            ],
-            decisionGlobale: null,
-          },
-          {
-            id: 2,
-            numeroDemande: 'COC-2024-123457',
-            dateCreation: '2024-12-14T14:20:00Z',
-            importateurNom: 'Global Import SARL',
-            status: STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT,
-            bureauControle: 'ECF',
-            marchandises: [
-              { nomProduit: 'T-shirts coton bio', categorie: 'Textile et habillement' }
-            ],
-            decisionGlobale: null,
-          },
-          {
-            id: 3,
-            numeroDemande: 'COC-2024-123455',
-            dateCreation: '2024-12-13T09:15:00Z',
-            importateurNom: 'Commerce International',
-            status: STATUS_DEMANDE.CLOTURE,
-            bureauControle: 'SGS',
-            marchandises: [
-              { nomProduit: 'Équipement médical', categorie: 'Produits pharmaceutiques et cosmétiques' }
-            ],
-            decisionGlobale: 'CONFORME',
-          },
-        ];
-        
-        setDemandes(demandesSimulees);
-        setError(null);
-      } catch (err) {
-        setError('Erreur lors du chargement des demandes');
-        console.error('Erreur:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDemandes();
-  }, []);
+  const fetchDemandes = async () => {
+    try {
+      const response = await demandeService.getMesDemandesUtilisateur();
+      setDemandes(response);
+    } catch (error) {
+      setError('Erreur lors du chargement');
+    }
+  };
+  
+  fetchDemandes();
+}, []);
 
   const getStatusColor = (status) => {
     switch (status) {

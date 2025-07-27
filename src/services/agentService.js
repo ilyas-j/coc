@@ -59,7 +59,7 @@ export const agentService = {
    */
   getDemandeDetails: async (demandeId) => {
     try {
-      const response = await api.get(`/agent/demandes/${demandeId}`);
+      const response = await api.get(`/agent/demandes/${demandeId}/details`);
       return response.data;
     } catch (error) {
       console.error('Erreur récupération détails demande:', error);

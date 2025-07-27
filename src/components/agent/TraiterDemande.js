@@ -46,58 +46,19 @@ const TraiterDemandeComplete = () => {
   const [success, setSuccess] = useState(null);
   const [showFinalDialog, setShowFinalDialog] = useState(false);
 
-  // Simulation de données pour développement
-  useEffect(() => {
-    // Simuler le chargement des détails de la demande
-    const demandeSimulee = {
-      id: parseInt(id),
-      numeroDemande: 'COC-2024-123456',
-      dateCreation: '2024-12-15T10:30:00Z',
-      status: STATUS_DEMANDE.DEPOSE,
-      importateurNom: 'Société Import Maroc',
-      importateurEmail: 'import@societe.ma',
-      exportateurNom: 'Société Export France',
-      exportateurEmail: 'export@societe.fr',
-      exportateurPays: 'France',
-      bureauControle: 'TUV',
-      agentNom: 'Agent Dupont',
-      marchandises: [
-        {
-          id: 1,
-          nomProduit: 'Lampe LED',
-          categorie: 'Équipements d\'éclairage',
-          quantite: 100,
-          uniteQuantite: 'pièce',
-          valeurDh: 15000,
-          fabricant: 'LightTech SA',
-          adresseFabricant: '123 Rue de la Lumière, Lyon',
-          paysOrigine: 'France',
-          avis: null,
-          commentaire: null,
-        },
-        {
-          id: 2,
-          nomProduit: 'Jouet Robot',
-          categorie: 'Jouets et articles pour enfants',
-          quantite: 50,
-          uniteQuantite: 'pièce',
-          valeurDh: 8500,
-          fabricant: 'ToyMaker Ltd',
-          adresseFabricant: '456 Kids Street, Paris',
-          paysOrigine: 'France',
-          avis: null,
-          commentaire: null,
-        }
-      ],
-      documents: {
-        facture: { nom: 'facture_001.pdf', url: '/documents/facture_001.pdf' },
-        ficheTechnique: { nom: 'fiche_technique.pdf', url: '/documents/fiche_technique.pdf' }
-      }
-    };
-    
-    setDemande(demandeSimulee);
-  }, [id]);
-
+useEffect(() => {
+  const fetchDemandeDetails = async () => {
+    try {
+      const response = await agentService.getDemandeDetails(id);
+      setDemande(response);
+    } catch (error) {
+      setError('Erreur lors du chargement de la demande');
+    }
+  };
+  
+  fetchDemandeDetails();
+}, [id]);
+  
   const handlePrendreEnCharge = async () => {
     setIsLoading(true);
     try {
