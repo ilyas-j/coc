@@ -28,10 +28,7 @@ import TraiterDemande from './components/agent/TraiterDemande';
 import SuperviseurVueEnsemble from './components/superviseur/SuperviseurVueEnsemble';
 import DashboardSuperviseur from './components/superviseur/DashboardSuperviseur';
 import GestionAgents from './components/superviseur/GestionAgents';
-import SuperviseurTraitement from './components/superviseur/SuperviseurTraitement';
 import SuperviseurStatistiques from './components/superviseur/SuperviseurStatistiques';
-// import TestSuperviseur from './components/superviseur/TestSuperviseur';
-
 import { USER_TYPES } from './utils/constants';
 
 const theme = createTheme({
@@ -145,50 +142,13 @@ function App() {
                               </ProtectedRoute>
                             } 
                           />
-                          
-                          {/* ==========================================
-                              ROUTES SUPERVISEUR - Traitement personnel
-                              Le superviseur peut aussi traiter comme un agent
-                              ========================================== */}
-                          <Route 
-                            path="/superviseur/traitement" 
-                            element={
-                              <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
-                                <SuperviseurTraitement />
-                              </ProtectedRoute>
-                            } 
-                          />
-                          <Route 
-                            path="/superviseur/traiter/:id" 
-                            element={
-                              <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
-                                <TraiterDemande />
-                              </ProtectedRoute>
-                            } 
-                          />
-                          
-                          {/* ==========================================
-                              🧪 ROUTE DE TEST SUPERVISEUR (temporaire)
-                              ========================================== */}
-                          <Route 
-                            path="/superviseur/test" 
-                            element={
-                              <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
-                                {/* <TestSuperviseur /> */}
-                              </ProtectedRoute>
-                            } 
-                          />
-                          
-                          {/* Route par défaut */}
-                          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                        </Routes>
+                       </Routes>   
                       </Box>
                     </Box>
                   </Box>
                 </ProtectedRoute>
               } />
             </Routes>
-            
             <ToastContainer />
           </div>
         </Router>

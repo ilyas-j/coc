@@ -97,15 +97,7 @@ const Sidebar = () => {
           
           // Divider
           { divider: true },
-          
-          // === TRAITEMENT PERSONNEL (OPTIONNEL) ===
-          { 
-            text: '👤 Traitement Personnel', 
-            icon: <Assignment />, 
-            path: '/superviseur/traitement',
-            secondary: true,
-            description: 'Double rôle : traiter des demandes personnellement'
-          },
+        
         ];
       
       default:

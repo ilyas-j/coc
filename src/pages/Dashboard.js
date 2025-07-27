@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Box,
   Grid,
@@ -17,9 +16,7 @@ import {
   List as ListIcon,
   SupervisorAccount,
   People,
-  Visibility,
   Analytics,
-  ManageAccounts,
   Dashboard as DashboardIcon,
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
@@ -108,16 +105,6 @@ const Dashboard = () => {
             icon: <Analytics fontSize="large" color="success" />,
             action: () => navigate('/superviseur/statistiques'),
             category: 'supervision'
-          },
-          
-          // === TRAITEMENT PERSONNEL (OPTIONNEL) ===
-          {
-            title: 'Traitement Personnel',
-            description: 'Traiter personnellement des demandes (double rôle)',
-            icon: <Assignment fontSize="large" color="warning" />,
-            action: () => navigate('/superviseur/traitement'),
-            category: 'traitement',
-            secondary: true
           },
         ];
       
