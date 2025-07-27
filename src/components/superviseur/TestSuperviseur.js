@@ -231,4 +231,4 @@ const TestSuperviseur = () => {
   );
 };
 
-export default TestSuperviseur;
+// Ce composant a été supprimé pour la mise en production

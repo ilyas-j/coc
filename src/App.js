@@ -30,7 +30,7 @@ import DashboardSuperviseur from './components/superviseur/DashboardSuperviseur'
 import GestionAgents from './components/superviseur/GestionAgents';
 import SuperviseurTraitement from './components/superviseur/SuperviseurTraitement';
 import SuperviseurStatistiques from './components/superviseur/SuperviseurStatistiques';
-import TestSuperviseur from './components/superviseur/TestSuperviseur';
+// import TestSuperviseur from './components/superviseur/TestSuperviseur';
 
 import { USER_TYPES } from './utils/constants';
 
@@ -174,7 +174,7 @@ function App() {
                             path="/superviseur/test" 
                             element={
                               <ProtectedRoute allowedRoles={[USER_TYPES.SUPERVISEUR]}>
-                                <TestSuperviseur />
+                                {/* <TestSuperviseur /> */}
                               </ProtectedRoute>
                             } 
                           />

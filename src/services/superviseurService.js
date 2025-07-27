@@ -13,11 +13,8 @@ export const superviseurService = {
     } catch (error) {
       console.error('❌ Erreur vue ensemble:', error);
       
-      // Si l'API n'existe pas encore, simuler des données pour le développement
-      if (error.status === 404 || error.code === 'NETWORK_ERROR') {
-        console.log('⚠️ API non disponible, utilisation de données simulées');
-        return simulateVueEnsemble();
-      }
+      // Si l'API n'existe pas encore, afficher une erreur utilisateur
+      throw error;
       
       throw error;
     }
@@ -35,10 +32,8 @@ export const superviseurService = {
     } catch (error) {
       console.error('❌ Erreur récupération agents:', error);
       
-      if (error.status === 404 || error.code === 'NETWORK_ERROR') {
-        console.log('⚠️ API non disponible, utilisation de données simulées');
-        return simulateAgentsBureau();
-      }
+      // Si l'API n'existe pas encore, afficher une erreur utilisateur
+      throw error;
       
       throw error;
     }
@@ -56,10 +51,8 @@ export const superviseurService = {
     } catch (error) {
       console.error('❌ Erreur réaffectation:', error);
       
-      if (error.status === 404 || error.code === 'NETWORK_ERROR') {
-        console.log('⚠️ API non disponible, simulation réaffectation');
-        return { message: 'Demande réaffectée avec succès (simulation)' };
-      }
+      // Si l'API n'existe pas encore, afficher une erreur utilisateur
+      throw error;
       
       throw error;
     }
@@ -79,10 +72,8 @@ export const superviseurService = {
     } catch (error) {
       console.error('❌ Erreur modification disponibilité:', error);
       
-      if (error.status === 404 || error.code === 'NETWORK_ERROR') {
-        console.log('⚠️ API non disponible, simulation modification');
-        return { message: 'Disponibilité agent modifiée (simulation)' };
-      }
+      // Si l'API n'existe pas encore, afficher une erreur utilisateur
+      throw error;
       
       throw error;
     }
@@ -100,9 +91,8 @@ export const superviseurService = {
     } catch (error) {
       console.error('❌ Erreur statistiques:', error);
       
-      if (error.status === 404 || error.code === 'NETWORK_ERROR') {
-        return simulateStatistiques();
-      }
+      // Si l'API n'existe pas encore, afficher une erreur utilisateur
+      throw error;
       
       throw error;
     }
@@ -120,9 +110,8 @@ export const superviseurService = {
     } catch (error) {
       console.error('❌ Erreur demandes personnelles:', error);
       
-      if (error.status === 404 || error.code === 'NETWORK_ERROR') {
-        return simulateDemandesPersonnelles();
-      }
+      // Si l'API n'existe pas encore, afficher une erreur utilisateur
+      throw error;
       
       throw error;
     }
@@ -140,20 +129,8 @@ export const superviseurService = {
     } catch (error) {
       console.error('❌ Erreur dashboard superviseur:', error);
       
-      if (error.status === 404 || error.code === 'NETWORK_ERROR') {
-        // Combiner les données de simulation
-        const [demandes, agents, stats] = await Promise.all([
-          simulateVueEnsemble(),
-          simulateAgentsBureau(),
-          simulateStatistiques()
-        ]);
-        
-        return {
-          statistiques: stats,
-          demandes: demandes,
-          agents: agents
-        };
-      }
+      // Si l'API n'existe pas encore, afficher une erreur utilisateur
+      throw error;
       
       throw error;
     }
@@ -189,10 +166,8 @@ export const superviseurService = {
     } catch (error) {
       console.error('❌ Erreur réaffectation automatique:', error);
       
-      if (error.status === 404 || error.code === 'NETWORK_ERROR') {
-        console.log('⚠️ Simulation réaffectation automatique');
-        return { message: 'Réaffectation automatique simulée', demandesTraitees: 3 };
-      }
+      // Si l'API n'existe pas encore, afficher une erreur utilisateur
+      throw error;
       
       throw error;
     }
@@ -468,13 +443,7 @@ export const superviseurDebugUtils = {
     const hasSuperviserRole = user.typeUser === 'SUPERVISEUR';
     
     console.log('🔐 Vérification permissions superviseur:', {
-      user: user.nom,
-      role: user.typeUser,
-      hasAccess: hasSuperviserRole
+      user: user.nom
     });
-    
-    return hasSuperviserRole;
   }
 };
-
-export default superviseurService;
