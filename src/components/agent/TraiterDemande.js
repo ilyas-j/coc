@@ -1,3 +1,4 @@
+// src/components/agent/TraiterDemande.js
 import React, { useState, useEffect } from 'react';
 import { agentService } from '../../services/agentService';
 import {
@@ -23,6 +24,7 @@ import {
   Stepper,
   Step,
   StepLabel,
+  CircularProgress,
 } from '@mui/material';
 import {
   PlayArrow,
@@ -47,31 +49,31 @@ const TraiterDemandeComplete = () => {
   const [success, setSuccess] = useState(null);
   const [showFinalDialog, setShowFinalDialog] = useState(false);
 
-useEffect(() => {
-  const fetchDemandeDetails = async () => {
-    try {
-      setIsLoading(true);
-      console.log('🔄 Chargement détails demande:', id);
-      
-      const response = await agentService.getDemandeDetails(id);
-      console.log('✅ Demande chargée:', response);
-      
-      setDemande(response);
-      setError(null);
-    } catch (error) {
-      console.error('❌ Erreur chargement demande:', error);
-      setError(`Erreur lors du chargement: ${error.message}`);
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    const fetchDemandeDetails = async () => {
+      try {
+        setIsLoading(true);
+        console.log('🔄 Chargement détails demande:', id);
+        
+        const response = await agentService.getDemandeDetails(id);
+        console.log('✅ Demande chargée:', response);
+        
+        setDemande(response);
+        setError(null);
+      } catch (error) {
+        console.error('❌ Erreur chargement demande:', error);
+        setError(`Erreur lors du chargement: ${error.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (id) {
+      fetchDemandeDetails();
+    } else {
+      setError('ID de demande manquant');
     }
-  };
-  
-  if (id) {
-    fetchDemandeDetails();
-  } else {
-    setError('ID de demande manquant');
-  }
-}, [id]);
+  }, [id]);
   
   const handlePrendreEnCharge = async () => {
     setIsLoading(true);
@@ -241,19 +243,69 @@ useEffect(() => {
     }
   };
 
+  // 🔧 FONCTION UTILITAIRE POUR GÉRER LES DOCUMENTS DE FAÇON SÉCURISÉE
+  const getDocumentsSafe = (demande) => {
+    if (!demande || !demande.documents) {
+      return {
+        facture: null,
+        ficheTechnique: null
+      };
+    }
+    
+    // Si documents est un tableau
+    if (Array.isArray(demande.documents)) {
+      const facture = demande.documents.find(doc => doc.typeDocument === 'FACTURE');
+      const ficheTechnique = demande.documents.find(doc => doc.typeDocument === 'FICHE_TECHNIQUE');
+      
+      return {
+        facture: facture || null,
+        ficheTechnique: ficheTechnique || null
+      };
+    }
+    
+    // Si documents est un objet
+    return {
+      facture: demande.documents.facture || null,
+      ficheTechnique: demande.documents.ficheTechnique || null
+    };
+  };
+
+  if (isLoading && !demande) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <CircularProgress size={60} />
+        <Typography variant="h6" sx={{ mt: 2 }}>
+          Chargement des détails de la demande...
+        </Typography>
+      </Box>
+    );
+  }
+
   if (!demande) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="info">Chargement des détails de la demande...</Alert>
+        <Alert severity="error">
+          {error || "Impossible de charger les détails de la demande"}
+        </Alert>
+        <Button 
+          variant="contained" 
+          onClick={() => navigate('/agent/demandes')}
+          sx={{ mt: 2 }}
+        >
+          Retour à la liste
+        </Button>
       </Box>
     );
   }
 
   const avisSubmitted = Object.values(avisData).filter(a => a.submitted);
-  const marchandisesTraitees = demande.marchandises.filter(m => m.avis).length;
-  const totalMarchandises = demande.marchandises.length;
+  const marchandisesTraitees = demande.marchandises?.filter(m => m.avis)?.length || 0;
+  const totalMarchandises = demande.marchandises?.length || 0;
   const peutFinaliser = (marchandisesTraitees + avisSubmitted.length) === totalMarchandises && 
                         demande.status === STATUS_DEMANDE.EN_COURS_DE_TRAITEMENT;
+
+  // 🔧 UTILISER LA FONCTION SÉCURISÉE POUR LES DOCUMENTS
+  const documents = getDocumentsSafe(demande);
 
   return (
     <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
@@ -317,13 +369,16 @@ useEffect(() => {
                 <ListItemText primary="Numéro" secondary={demande.numeroDemande} />
               </ListItem>
               <ListItem>
-                <ListItemText primary="Date de création" secondary={new Date(demande.dateCreation).toLocaleDateString('fr-FR')} />
+                <ListItemText 
+                  primary="Date de création" 
+                  secondary={demande.dateCreation ? new Date(demande.dateCreation).toLocaleDateString('fr-FR') : 'Non disponible'} 
+                />
               </ListItem>
               <ListItem>
-                <ListItemText primary="Bureau de contrôle" secondary={demande.bureauControle} />
+                <ListItemText primary="Bureau de contrôle" secondary={demande.bureauControleNom || 'Non affecté'} />
               </ListItem>
               <ListItem>
-                <ListItemText primary="Agent affecté" secondary={demande.agentNom} />
+                <ListItemText primary="Agent affecté" secondary={demande.agentNom || 'Non affecté'} />
               </ListItem>
               <ListItem>
                 <ListItemText 
@@ -344,44 +399,62 @@ useEffect(() => {
             <Typography variant="h6" gutterBottom>
               Importateur
             </Typography>
-            <Typography><strong>Nom:</strong> {demande.importateurNom}</Typography>
-            <Typography><strong>Email:</strong> {demande.importateurEmail}</Typography>
+            <Typography><strong>Nom:</strong> {demande.importateurNom || 'Non renseigné'}</Typography>
           </Paper>
 
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
               Exportateur
             </Typography>
-            <Typography><strong>Nom:</strong> {demande.exportateurNom}</Typography>
-            <Typography><strong>Email:</strong> {demande.exportateurEmail}</Typography>
-            <Typography><strong>Pays:</strong> {demande.exportateurPays}</Typography>
+            <Typography><strong>Nom:</strong> {demande.exportateurNom || 'Non renseigné'}</Typography>
           </Paper>
 
-          {/* Documents */}
+          {/* Documents - VERSION CORRIGÉE */}
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Documents fournis
             </Typography>
             <List dense>
-              {demande.documents.facture && (
+              {documents.facture ? (
                 <ListItem>
                   <ListItemIcon>
                     <Description color="primary" />
                   </ListItemIcon>
                   <ListItemText 
                     primary="Facture" 
-                    secondary={demande.documents.facture.nom}
+                    secondary={documents.facture.nomFichier || documents.facture.nom || 'Facture fournie'}
+                  />
+                </ListItem>
+              ) : (
+                <ListItem>
+                  <ListItemIcon>
+                    <Description color="disabled" />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Facture" 
+                    secondary="Non fournie"
                   />
                 </ListItem>
               )}
-              {demande.documents.ficheTechnique && (
+              
+              {documents.ficheTechnique ? (
                 <ListItem>
                   <ListItemIcon>
                     <Description color="secondary" />
                   </ListItemIcon>
                   <ListItemText 
                     primary="Fiche technique" 
-                    secondary={demande.documents.ficheTechnique.nom}
+                    secondary={documents.ficheTechnique.nomFichier || documents.ficheTechnique.nom || 'Fiche technique fournie'}
+                  />
+                </ListItem>
+              ) : (
+                <ListItem>
+                  <ListItemIcon>
+                    <Description color="disabled" />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Fiche technique" 
+                    secondary="Non fournie"
                   />
                 </ListItem>
               )}
@@ -526,7 +599,11 @@ useEffect(() => {
                 </Grid>
               </CardContent>
             </Card>
-          ))}
+          )) || (
+            <Alert severity="warning">
+              Aucune marchandise trouvée pour cette demande
+            </Alert>
+          )}
         </Grid>
       </Grid>
 
