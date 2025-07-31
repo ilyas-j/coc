@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { agentService } from '../../services/agentService';
 import {
   Box,
   Paper,
@@ -49,14 +50,27 @@ const TraiterDemandeComplete = () => {
 useEffect(() => {
   const fetchDemandeDetails = async () => {
     try {
+      setIsLoading(true);
+      console.log('🔄 Chargement détails demande:', id);
+      
       const response = await agentService.getDemandeDetails(id);
+      console.log('✅ Demande chargée:', response);
+      
       setDemande(response);
+      setError(null);
     } catch (error) {
-      setError('Erreur lors du chargement de la demande');
+      console.error('❌ Erreur chargement demande:', error);
+      setError(`Erreur lors du chargement: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
   
-  fetchDemandeDetails();
+  if (id) {
+    fetchDemandeDetails();
+  } else {
+    setError('ID de demande manquant');
+  }
 }, [id]);
   
   const handlePrendreEnCharge = async () => {
